@@ -4,7 +4,7 @@ import json
 import os
 
 def main():
-    with open(os.env['GITHUB_EVENT_PATH'], 'r') as f:
+    with open(os.environ['GITHUB_EVENT_PATH'], 'r') as f:
         event = json.load(f)
         pprint.pprint(event)
 
