@@ -7,5 +7,7 @@ LABEL "com.github.actions.color"="green"
 
 RUN apt-get update && apt-get install -y python3-pip && pip3 install jira
 
+RUN apt-get install -y npm && npm i markdown2confluence -g
+
 ADD sync_issue.py /sync_issue.py
 ENTRYPOINT ["/sync_issue.py"]
