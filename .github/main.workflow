@@ -3,7 +3,7 @@ workflow "Sync issues to JIRA" {
   resolves = ["./action-jira-sync"]
 }
 
-workflow "Sync issues to JIRA" {
+workflow "Sync issue comments to JIRA" {
   on = "issue_comment"
   resolves = ["./action-jira-sync"]
 }
