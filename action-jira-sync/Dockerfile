@@ -1,4 +1,4 @@
-FROM debian:9.5-slim
+FROM debian:stretch-backports
 
 LABEL "com.github.actions.name"="Sync issues to JIRA"
 LABEL "com.github.actions.description"="WAT"
