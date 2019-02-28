@@ -8,23 +8,38 @@ This is a GitHub action that performs simple one way syncing of GitHub issues in
   - A JIRA custom field "GitHub Reference" is set to the URL of the issue
   - The GitHub issue title has `(JIRA SLUG)` appended to it.
 * When a GitHub issue is edited, the summary and description of the JIRA issue are updated.
-* When someone comments on the GitHub issue, a comment is created on the JIRA issue.
-* When GitHub comments are edited or deleted, or the issue is closed or deleted, a comment is created on the JIRA issue.
+* When comments are made on the GitHub issue, a comment is created on the JIRA issue.
+* When GitHub comments are edited or deleted a comment is created on the JIRA issue.
+* When the GitHub issue is closed or deleted a comment is created on the JIRA issue.
+* When the GitHub issue is labelled, the JIRA Issue Type may be set accordingly (see below).
 
-Note: Closing the GitHub issue does not cause any transition in the JIRA issue. This is deliberate as sometimes GitHub issues are closed for different reasons (ie reporter decides "Works for me!").
-
-# Sync Linkage
+# Sync Connection
 
 The JIRA custom URL field named "GitHub Reference" must exist in the configured JIRA project. It is used to link the JIRA issue to the GitHub issue.
 
 The sync action will continue to update JIRA issues which are moved to other JIRA projects, provided the "GitHub Reference" field is moved to the other JIRA project as well.
+
+To break a link between a GitHub issue and a JIRA issue, clear the GitHub Reference field. (Note that if the GitHub Issue is updated later on, this action may create a new JIRA issue to track it.)
+
+# Issue Types
+
+If a GitHub issue has any labels where the name of the label matches the name of an issue type, or the name of the label matches "Type: <issue type>", then the JIRA issue will be updated to that issue type. Matching is case insensitive.
+
+If no labels match issue types, environment variable `JIRA_ISSUE_TYPE` is used for new issues. If `JIRA_ISSUE_TYPE` is not set, the default issue type is "Task".
+
+# Limitations
+
+Currently does not sync the following things:
+
+* Labels, apart from any which match Issue Types
+* Transitions. Closing, Reopening or Deleting an issue in GitHub only leaves a comment in the JIRA issue. This is at least partially by design because sometimes GitHub issues are closed by their reporters even though an underlying issue still needs fixing in the codebase.
 
 # Variables
 
 The environment variables should be set in the GitHub Workflow:
 
 * `JIRA_PROJECT` is the slug of the JIRA project to create new issues in.
-* `JIRA_ISSUE_TYPE` (optional) the JIRA issue type for new issues to be created with. If not set, "Task" is used.
+* `JIRA_ISSUE_TYPE` (optional) the JIRA issue type for new issues. If unset, "Task" is used.
 
 The following secrets should be set in the workflow:
 
