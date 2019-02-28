@@ -152,14 +152,20 @@ def _get_summary(gh_issue):
 
 
 def _create_jira_issue(jira, gh_issue):
+    # get the custom field ID for 'GitHub Reference' on this instance
+    try:
+        github_reference_id = [f['id'] for f in jira.fields() if f["name"] == "GitHub Reference" ][0]
+    except IndexError:
+        raise RuntimeError("Custom field 'GitHub Reference' is not configured on this JIRA instance")
+
     fields = {
         "summary": _get_summary(gh_issue),
         "project": os.environ['JIRA_PROJECT'],
         "description": _get_description(gh_issue),
         "issuetype": os.environ.get('JIRA_ISSUE_TYPE', 'Task'),
+        github_reference_id: gh_issue["url"]
     }
-    issue = jira.create_issue(fields)
-    issue.update(fields={"GitHub Reference": gh_issue["url"]})
+    return jira.create_issue(fields)
 
 
 def _find_jira_issue(jira, gh_issue, make_new=False):

@@ -8,6 +8,8 @@ import unittest.mock
 from unittest.mock import create_autospec
 import tempfile
 
+# mock custom field ID for the 'GitHub Reference' field
+MOCK_GITHUB_REFERENCE_ID = "custom_field_111111"
 
 def run_sync_issue(event_name, event, jira_issue=None):
     """
@@ -31,6 +33,12 @@ def run_sync_issue(event_name, event, jira_issue=None):
         os.environ['JIRA_PASS'] = 'test_pass'
 
         jira_class = create_autospec(jira.JIRA)
+
+        # fake a fields() response with all fields in instance
+        jira_class.return_value.fields.return_value = [
+            { "id": MOCK_GITHUB_REFERENCE_ID,
+              "name": "GitHub Reference" }
+            ]
 
         if jira_issue is not None:
             jira_class.return_value.search_issues.return_value = [jira_issue]
@@ -66,7 +74,7 @@ class TestIssuesEvents(unittest.TestCase):
         self.assertIn(issue["title"], fields["summary"])
         self.assertIn(issue["body"], fields["description"])
         self.assertIn(issue["url"], fields["description"])
-        self.assertEqual(issue["url"], fields["GitHub Reference"])
+        self.assertEqual(issue["url"], fields[MOCK_GITHUB_REFERENCE_ID])
 
     def test_issue_closed(self):
         self._test_issue_simple_comment("closed")
