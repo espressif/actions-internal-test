@@ -170,6 +170,7 @@ def _create_jira_issue(jira, gh_issue):
     issue = jira.create_issue(fields)
 
     # append the new JIRA slug to the GitHub issue
+    # (updates made by github actions don't trigger new actions)
     github = Github(os.environ["GITHUB_TOKEN"])
 
     # note: github also gives us 'repository' JSON which has a 'full_name', but this is simpler
