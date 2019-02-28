@@ -162,9 +162,9 @@ class TestIssueCommentEvents(unittest.TestCase):
         self._test_issue_comment("deleted")
 
     def test_issue_comment_edited(self):
-        self._test_issue_comment("edited")
+        self._test_issue_comment("edited", extra_event_data={ "changes" : {"body": {"from": "I am the old comment body" } }}) 
 
-    def _test_issue_comment(self, action, gh_issue=None, gh_comment=None):
+    def _test_issue_comment(self, action, gh_issue=None, gh_comment=None, extra_event_data={}):
         """
         Wrapper for the simple case of an issue comment event (with 'action'). GitHub issue and comment fields can be supplied, or generic ones will be used.
         """
@@ -189,10 +189,12 @@ class TestIssueCommentEvents(unittest.TestCase):
                  "issue": gh_issue,
                  "comment": gh_comment
                  }
+        event.update(extra_event_data)
 
         m_issue = create_autospec(jira.Issue)(None, None)
         jira_id = hash(action) % 1003
         m_issue.id = jira_id
+        m_issue.key = "FAKEFAKE-%d" % (hash(action) % 333,)
 
         m_jira = run_sync_issue('issue_comment', event, m_issue)
 
@@ -201,8 +203,8 @@ class TestIssueCommentEvents(unittest.TestCase):
         self.assertEqual(jira_id, comment_jira_id)
         self.assertIn(gh_comment["user"]["login"], comment)
         self.assertIn(gh_comment["html_url"], comment)
-        if action != "created":
-            self.assertIn(action, comment)
+        if action != "deleted":
+            self.assertIn(gh_comment["body"], comment)  # note: doesn't account for markdown2wiki
 
         return m_jira
 

@@ -89,16 +89,35 @@ def _leave_jira_issue_comment(jira, event, verb, should_create,
     jira.add_comment(jira_issue.id, "The [GitHub issue|%s] has been %s by @%s" % (gh_issue["html_url"], verb, gh_issue["user"]["login"]))
 
 
+def _get_jira_comment_body(gh_comment, body=None):
+    if body is None:
+        body = _markdown2wiki(gh_comment["body"])
+    return "[GitHub issue comment|%s] by @%s:\n\n%s" % (gh_comment["html_url"], gh_comment["user"]["login"], body)
+
 def handle_comment_created(jira, event):
     gh_comment = event["comment"]
+
     jira_issue = _find_jira_issue(jira, event["issue"], True)
-    jira.add_comment(jira_issue.id, "New [GitHub issue comment|%s] by @%s" % (gh_comment["html_url"], gh_comment["user"]["login"]))
+    jira.add_comment(jira_issue.id, _get_jira_comment_body(gh_comment))
 
 
 def handle_comment_edited(jira, event):
     gh_comment = event["comment"]
+    old_gh_body = _markdown2wiki(event["changes"]["body"]["from"])
+
     jira_issue = _find_jira_issue(jira, event["issue"], True)
-    jira.add_comment(jira_issue.id, "@%s edited their [GitHub issue comment|%s]" % (gh_comment["user"]["login"], gh_comment["html_url"]))
+
+    # Look for the old comment and update it if we find it
+    old_jira_body = _get_jira_comment_body(gh_comment, old_gh_body)
+    found = False
+    for comment in jira.comments(jira_issue.key):
+        if comment.body == old_jira_body:
+            comment.update(body=_get_jira_comment_body(gh_comment))
+            found = True
+            break
+
+    if not found:  # if we didn't find the old comment, make a new comment about the edit
+        jira.add_comment(jira_issue.id, _get_jira_comment_body(gh_comment))
 
 
 def handle_comment_deleted(jira, event):
