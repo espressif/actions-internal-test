@@ -28,6 +28,8 @@ def main():
                 'closed': handle_issue_closed,
                 'deleted': handle_issue_deleted,
                 'reopened': handle_issue_reopened,
+                'labeled': handle_issue_label_change,
+                'unlabeled': handle_issue_label_change,
             }
         elif os.environ['GITHUB_EVENT_NAME'] == 'issue_comment':
             action_handlers = {
@@ -41,6 +43,25 @@ def main():
             print("No handler for issues action '%s'. Skipping." % action)
 
 
+def _get_jira_issue_type(jira, gh_issue):
+    """
+    Try to map a GitHub label to a JIRA issue type. Matches will happen when the label
+    matches the issue type (case insensitive) or when the label has the form "Type: <issuetype>"
+    """
+    gh_labels = [l["name"] for l in gh_issue["labels"]]
+
+    issue_types = jira.issue_types()
+
+    for gh_label in gh_labels:
+        for issue_type in issue_types:
+            type_name = issue_type.name.lower()
+            if gh_label.lower() in [ type_name, "Type: %s" % (type_name,) ]:
+                # a match!
+                print("Mapping GitHub label %s to JIRA issue type %s" % (gh_label, issue_type.name))
+                return issue_type
+
+    return None
+
 def handle_issue_opened(jira, event):
     _create_jira_issue(jira, event["issue"])
 
@@ -51,7 +72,8 @@ def handle_issue_edited(jira, event):
 
     issue.update(fields={
         "description": _get_description(gh_issue),
-        "summary": _get_summary(gh_issue)
+        "summary": _get_summary(gh_issue),
+        "issuetype": _get_jira_issue_type(jira, gh_issue),
     })
 
     _leave_jira_issue_comment(jira, event, "edited", True, jira_issue=issue)
@@ -62,6 +84,14 @@ def handle_issue_closed(jira, event):
     # issues often get closed for the wrong reasons - ie the user
     # found a workaround but the root cause still exists.
     _leave_jira_issue_comment(jira, event, "closed", False)
+
+
+def handle_issue_label_change(jira, event):
+    gh_issue = event["issue"]
+    issue = _find_jira_issue(jira, gh_issue, True)
+    issue.update(fields={
+        "issuetype": _get_jira_issue_type(jira, gh_issue),
+    })
 
 
 def handle_issue_deleted(jira, event):
@@ -123,7 +153,7 @@ def handle_comment_edited(jira, event):
 def handle_comment_deleted(jira, event):
     gh_comment = event["comment"]
     jira_issue = _find_jira_issue(jira, event["issue"], True)
-    jira.add_comment(jira_issue.id, "@%s deleted their [GitHub issue comment|%s]" % (gh_comment["user"]["login"], gh_comment["html_url"]))
+    jira.add_comment(jira_issue.id, "@%s deleted [GitHub issue comment|%s]" % (gh_comment["user"]["login"], gh_comment["html_url"]))
 
 
 def _markdown2wiki(markdown):
@@ -185,11 +215,15 @@ def _create_jira_issue(jira, gh_issue):
     except IndexError:
         raise RuntimeError("Custom field 'GitHub Reference' is not configured on this JIRA instance")
 
+    issuetype = _get_jira_issue_type(jira, gh_issue)
+    if issuetype is None:
+        issuetype = os.environ.get('JIRA_ISSUE_TYPE', 'Task')
+
     fields = {
         "summary": _get_summary(gh_issue),
         "project": os.environ['JIRA_PROJECT'],
         "description": _get_description(gh_issue),
-        "issuetype": os.environ.get('JIRA_ISSUE_TYPE', 'Task'),
+        "issuetype": issuetype,
         github_reference_id: gh_issue["html_url"]
     }
     issue = jira.create_issue(fields)

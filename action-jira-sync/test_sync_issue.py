@@ -46,6 +46,23 @@ def run_sync_issue(event_name, event, jira_issue=None):
               "name": "GitHub Reference" }
             ]
 
+        # fake a issue_types response also
+        issue_type_bug = create_autospec(jira.resources.IssueType)
+        issue_type_bug.name = "Bug"
+        issue_type_bug.id = 5001
+        issue_type_task = create_autospec(jira.resources.IssueType)
+        issue_type_task.name = "Task"
+        issue_type_task.id = 5002
+        issue_type_new_feature = create_autospec(jira.resources.IssueType)
+        issue_type_task.name = "New Feature"
+        issue_type_task.id = 5003
+
+        jira_class.return_value.issue_types.return_value = [
+            issue_type_bug,
+            issue_type_task,
+            issue_type_new_feature,
+            ]
+
         if jira_issue is not None:
             jira_class.return_value.search_issues.return_value = [jira_issue]
         else:
@@ -70,6 +87,7 @@ class TestIssuesEvents(unittest.TestCase):
                  "title": "Test issue",
                  "body": "I am a new test issue\nabc\n\n",
                  "user": {"login": "testuser"},
+                 "labels" : [ { "name": "bug" } ]
                  }
         event = {"action": "opened",
                  "issue": issue
@@ -110,6 +128,7 @@ class TestIssuesEvents(unittest.TestCase):
                  "title": "Edited issue",
                  "body": "Edited issue content goes here",
                  "user": {"login": "edituser"},
+                 "labels" : []
                  }
 
         m_jira = self._test_issue_simple_comment("edited", issue)
@@ -133,6 +152,7 @@ class TestIssuesEvents(unittest.TestCase):
                         "title": "Test issue",
                         "body": "I am a test issue\nabc\n\n",
                         "user": {"login": "otheruser"},
+                        "labels": [{"name" : "Type: New Feature"}],
                         }
         event = {"action": action,
                  "issue": gh_issue
@@ -176,6 +196,7 @@ class TestIssueCommentEvents(unittest.TestCase):
                         "title": "Test issue",
                         "body": "I am a test issue\nabc\n\n",
                         "user": {"login": "otheruser"},
+                        "labels": []
                         }
         if gh_comment is None:
             gh_comment_id = hash(action) % 404
