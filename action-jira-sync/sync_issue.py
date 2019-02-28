@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from jira import JIRA
+from github import Github
 import pprint
 import json
 import os
@@ -165,7 +166,15 @@ def _create_jira_issue(jira, gh_issue):
         "issuetype": os.environ.get('JIRA_ISSUE_TYPE', 'Task'),
         github_reference_id: gh_issue["html_url"]
     }
-    return jira.create_issue(fields)
+    issue = jira.create_issue(fields)
+
+    # append the new JIRA slug to the GitHub issue
+    github = Github(os.environ["GITHUB_TOKEN"])
+    repo = github.get_repo(gh_issue["repository_url"])
+    api_gh_issue = repo.get_issue(gh_issue["number"])
+    api_gh_issue.edit(title="%s (%s)" % (api_gh_issue.title, issue.key))
+
+    return issue
 
 
 def _find_jira_issue(jira, gh_issue, make_new=False):

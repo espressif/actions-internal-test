@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import jira
+import github
 import json
 import sync_issue
 import os
@@ -10,6 +11,8 @@ import tempfile
 
 # mock custom field ID for the 'GitHub Reference' field
 MOCK_GITHUB_REFERENCE_ID = "custom_field_111111"
+
+MOCK_GITHUB_TOKEN = "iamagithubtoken"
 
 def run_sync_issue(event_name, event, jira_issue=None):
     """
@@ -27,10 +30,13 @@ def run_sync_issue(event_name, event, jira_issue=None):
         os.environ['GITHUB_EVENT_NAME'] = event_name
         os.environ['GITHUB_EVENT_PATH'] = event_file.name
 
+        os.environ['GITHUB_TOKEN'] = MOCK_GITHUB_TOKEN
         os.environ['JIRA_PROJECT'] = 'TEST'
         os.environ['JIRA_URL'] = 'https://test.test:88/'
         os.environ['JIRA_USER'] = 'test_user'
         os.environ['JIRA_PASS'] = 'test_pass'
+
+        github_class = create_autospec(github.Github)
 
         jira_class = create_autospec(jira.JIRA)
 
@@ -46,6 +52,7 @@ def run_sync_issue(event_name, event, jira_issue=None):
             jira_class.return_value.search_issues.return_value = []
 
         sync_issue.JIRA = jira_class
+        sync_issue.Github = github_class
         sync_issue.main()
 
         return jira_class.return_value  # mock JIRA object
@@ -58,6 +65,7 @@ class TestIssuesEvents(unittest.TestCase):
 
     def test_issue_opened(self):
         issue = {"html_url": "https://github.com/fake/fake/issues/3",
+                 "repository_url": "https://github.com/fake/fake",
                  "number": 3,
                  "title": "Test issue",
                  "body": "I am a new test issue\nabc\n\n",
@@ -76,6 +84,13 @@ class TestIssuesEvents(unittest.TestCase):
         self.assertIn(issue["html_url"], fields["description"])
         self.assertEqual(issue["html_url"], fields[MOCK_GITHUB_REFERENCE_ID])
 
+        # check that the github repo was updated
+        # (TODO: actually validate arguments here. Right now this just checks the GitHub API was called at all.)
+        github_obj = sync_issue.Github.return_value
+        repo_obj = github_obj.get_repo.return_value
+        issue_obj = repo_obj.get_issue.return_value
+        update_args = issue_obj.edit.call_args[1]
+
     def test_issue_closed(self):
         self._test_issue_simple_comment("closed")
 
@@ -87,6 +102,7 @@ class TestIssuesEvents(unittest.TestCase):
 
     def test_issue_edited(self):
         issue = {"html_url": "https://github.com/fake/fake/issues/11",
+                 "repository_url": "https://github.com/fake/fake",
                  "number": 11,
                  "title": "Edited issue",
                  "body": "Edited issue content goes here",
@@ -152,6 +168,7 @@ class TestIssueCommentEvents(unittest.TestCase):
         if gh_issue is None:
             gh_number = hash(action) % 50
             gh_issue = {"html_url": "https://github.com/fake/fake/issues/%d" % gh_number,
+                        "repository_url": "https://github.com/fake/fake",
                         "number": gh_number,
                         "title": "Test issue",
                         "body": "I am a test issue\nabc\n\n",
@@ -160,6 +177,7 @@ class TestIssueCommentEvents(unittest.TestCase):
         if gh_comment is None:
             gh_comment_id = hash(action) % 404
             gh_comment = {"html_url": gh_issue["html_url"] + "#" + str(gh_comment_id),
+                          "repository_url": "https://github.com/fake/fake",
                           "id": gh_comment_id,
                           "user": {"login": "commentuser"},
                           "body": "ZOMG a comment!"
