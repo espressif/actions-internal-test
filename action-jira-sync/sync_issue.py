@@ -4,6 +4,7 @@ from github import Github
 import pprint
 import json
 import os
+import re
 import subprocess
 import tempfile
 
@@ -170,7 +171,12 @@ def _create_jira_issue(jira, gh_issue):
 
     # append the new JIRA slug to the GitHub issue
     github = Github(os.environ["GITHUB_TOKEN"])
-    repo = github.get_repo(gh_issue["repository_url"])
+
+    # note: github also gives us 'repository' JSON which has a 'full_name', but this is simpler
+    # for the API structure.
+    repo_name = re.search(r'[^/]+/[^/]+$', gh_issue["repository_url"]).group(0)
+    repo = github.get_repo(repo_name)
+
     api_gh_issue = repo.get_issue(gh_issue["number"])
     api_gh_issue.edit(title="%s (%s)" % (api_gh_issue.title, issue.key))
 

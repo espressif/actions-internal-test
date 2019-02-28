@@ -84,12 +84,15 @@ class TestIssuesEvents(unittest.TestCase):
         self.assertIn(issue["html_url"], fields["description"])
         self.assertEqual(issue["html_url"], fields[MOCK_GITHUB_REFERENCE_ID])
 
-        # check that the github repo was updated
-        # (TODO: actually validate arguments here. Right now this just checks the GitHub API was called at all.)
+        # check that the github repo was updated via expected sequence of API calls
+        sync_issue.Github.assert_called_with(MOCK_GITHUB_TOKEN)
         github_obj = sync_issue.Github.return_value
+        github_obj.get_repo.assert_called_with("fake/fake")
         repo_obj = github_obj.get_repo.return_value
+        repo_obj.get_issue.assert_called_with(issue["number"])
         issue_obj = repo_obj.get_issue.return_value
         update_args = issue_obj.edit.call_args[1]
+        self.assertIn("title", update_args)
 
     def test_issue_closed(self):
         self._test_issue_simple_comment("closed")
