@@ -169,7 +169,13 @@ def _get_description(gh_issue):
 
 
 def _get_summary(gh_issue):
-    return "GitHub #%d: %s" % (gh_issue["number"], gh_issue["title"])
+    result = "GH #%d: %s" % (gh_issue["number"], gh_issue["title"])
+
+    # don't mirror any existing JIRA slug-like pattern from GH title to JIRA summary
+    # (note we don't look for a particular pattern as the JIRA issue may have moved)
+    result = re.sub(r" \([\w]+-[\d]+\)", "", result)
+
+    return result
 
 
 def _create_jira_issue(jira, gh_issue):
