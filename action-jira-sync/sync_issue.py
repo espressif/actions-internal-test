@@ -84,7 +84,7 @@ def _leave_jira_issue_comment(jira, event, verb, should_create,
         jira_issue = _find_jira_issue(jira, event["issue"], should_create)
         if jira_issue is None:
             return
-    jira.add_comment(jira_issue.id, "The [GitHub issue|%s] has been %s by @%s" % (gh_issue["url"], verb, gh_issue["user"]["login"]))
+    jira.add_comment(jira_issue.id, "The [GitHub issue|%s] has been %s by @%s" % (gh_issue["html_url"], verb, gh_issue["user"]["login"]))
 
 
 def handle_comment_created(jira, event):
@@ -139,9 +139,9 @@ def _get_description(gh_issue):
       {code}
       Closes %(github_url)s
       {code}
-      in the commit message so the commit is linked on GitHub automatically.
+      in the commit message so the commit is closed on GitHub automatically.
     """ % {
-        "github_url": gh_issue["url"],
+        "github_url": gh_issue["html_url"],
         "github_user": gh_issue["user"]["login"],
         "github_description": _markdown2wiki(gh_issue["body"]),
     }
@@ -163,13 +163,13 @@ def _create_jira_issue(jira, gh_issue):
         "project": os.environ['JIRA_PROJECT'],
         "description": _get_description(gh_issue),
         "issuetype": os.environ.get('JIRA_ISSUE_TYPE', 'Task'),
-        github_reference_id: gh_issue["url"]
+        github_reference_id: gh_issue["html_url"]
     }
     return jira.create_issue(fields)
 
 
 def _find_jira_issue(jira, gh_issue, make_new=False):
-    url = gh_issue["url"]
+    url = gh_issue["html_url"]
     r = jira.search_issues('"GitHub Reference" = "%s"' % (url))
     if len(r) == 0:
         print("WARNING: GitHub issue '%s' not found in JIRA." % url)

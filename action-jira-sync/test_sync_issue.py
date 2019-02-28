@@ -57,7 +57,7 @@ def run_sync_issue(event_name, event, jira_issue=None):
 class TestIssuesEvents(unittest.TestCase):
 
     def test_issue_opened(self):
-        issue = {"url": "https://github.com/fake/fake/issues/3",
+        issue = {"html_url": "https://github.com/fake/fake/issues/3",
                  "number": 3,
                  "title": "Test issue",
                  "body": "I am a new test issue\nabc\n\n",
@@ -73,8 +73,8 @@ class TestIssuesEvents(unittest.TestCase):
         fields = m_jira.create_issue.call_args[0][0]
         self.assertIn(issue["title"], fields["summary"])
         self.assertIn(issue["body"], fields["description"])
-        self.assertIn(issue["url"], fields["description"])
-        self.assertEqual(issue["url"], fields[MOCK_GITHUB_REFERENCE_ID])
+        self.assertIn(issue["html_url"], fields["description"])
+        self.assertEqual(issue["html_url"], fields[MOCK_GITHUB_REFERENCE_ID])
 
     def test_issue_closed(self):
         self._test_issue_simple_comment("closed")
@@ -86,7 +86,7 @@ class TestIssuesEvents(unittest.TestCase):
         self._test_issue_simple_comment("deleted")
 
     def test_issue_edited(self):
-        issue = {"url": "https://github.com/fake/fake/issues/11",
+        issue = {"html_url": "https://github.com/fake/fake/issues/11",
                  "number": 11,
                  "title": "Edited issue",
                  "body": "Edited issue content goes here",
@@ -109,7 +109,7 @@ class TestIssuesEvents(unittest.TestCase):
         """
         if gh_issue is None:
             gh_number = hash(action) % 43
-            gh_issue = {"url": "https://github.com/fake/fake/issues/%d" % gh_number,
+            gh_issue = {"html_url": "https://github.com/fake/fake/issues/%d" % gh_number,
                         "number": gh_number,
                         "title": "Test issue",
                         "body": "I am a test issue\nabc\n\n",
@@ -151,7 +151,7 @@ class TestIssueCommentEvents(unittest.TestCase):
         """
         if gh_issue is None:
             gh_number = hash(action) % 50
-            gh_issue = {"url": "https://github.com/fake/fake/issues/%d" % gh_number,
+            gh_issue = {"html_url": "https://github.com/fake/fake/issues/%d" % gh_number,
                         "number": gh_number,
                         "title": "Test issue",
                         "body": "I am a test issue\nabc\n\n",
@@ -159,7 +159,7 @@ class TestIssueCommentEvents(unittest.TestCase):
                         }
         if gh_comment is None:
             gh_comment_id = hash(action) % 404
-            gh_comment = {"html_url": gh_issue["url"] + "#" + str(gh_comment_id),
+            gh_comment = {"html_url": gh_issue["html_url"] + "#" + str(gh_comment_id),
                           "id": gh_comment_id,
                           "user": {"login": "commentuser"},
                           "body": "ZOMG a comment!"
