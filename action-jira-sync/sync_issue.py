@@ -52,7 +52,7 @@ def handle_issue_edited(jira, event):
     issue.update(fields={
         "description": _get_description(gh_issue),
         "summary": _get_summary(gh_issue)
-    }, notify=False)
+    })
 
     _leave_jira_issue_comment(jira, event, "edited", True, jira_issue=issue)
 
