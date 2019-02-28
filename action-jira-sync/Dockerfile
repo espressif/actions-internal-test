@@ -11,4 +11,6 @@ RUN apt-get install -y curl && curl -sL https://deb.nodesource.com/setup_11.x | 
 RUN apt-get install -y nodejs npm && npm i markdown2confluence -g
 
 ADD sync_issue.py /sync_issue.py
+ADD test_sync_issue.py /test_sync_issue.py
+
 ENTRYPOINT ["/sync_issue.py"]

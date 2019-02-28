@@ -4,8 +4,8 @@ import pprint
 import json
 import os
 import subprocess
+import tempfile
 
-JIRA_PROJECT = os.environ['JIRA_PROJECT']
 
 def main():
     with open(os.environ['GITHUB_EVENT_PATH'], 'r') as f:
@@ -13,23 +13,25 @@ def main():
         pprint.pprint(event)
 
         print('Connecting to JIRA...')
-        jira = JIRA(os.environ('JIRA_URL'), basic_auth=(os.environ('JIRA_USER'), os.environ('JIRA_PASS')))
+        jira = JIRA(os.environ['JIRA_URL'],
+                    basic_auth=(os.environ['JIRA_USER'],
+                                os.environ['JIRA_PASS']))
 
         action = event["action"]
 
         if os.environ['GITHUB_EVENT_NAME'] == 'issues':
             action_handlers = {
-                'opened' :  handle_issue_opened,
-                'edited' :  handle_issue_edited,
-                'closed' :  handle_issue_closed,
-                'deleted' : handle_issue_deleted,
-                'reopened' : handle_issue_reopened,
+                'opened': handle_issue_opened,
+                'edited': handle_issue_edited,
+                'closed': handle_issue_closed,
+                'deleted': handle_issue_deleted,
+                'reopened': handle_issue_reopened,
             }
         elif os.environ['GITHUB_EVENT_NAME'] == 'issue_comment':
             action_handlers = {
-                'created' : handle_comment_created,
-                'edited' : handle_comment_edited,
-                'deleted' : handle_comment_deleted,
+                'created': handle_comment_created,
+                'edited': handle_comment_edited,
+                'deleted': handle_comment_deleted,
             }
         if action in action_handlers:
             action_handlers[action](jira, event)
@@ -38,25 +40,26 @@ def main():
 
 
 def handle_issue_opened(jira, event):
-    issue = _create_jira_issue(jira, event["issue"])
+    _create_jira_issue(jira, event["issue"])
 
 
 def handle_issue_edited(jira, event):
     gh_issue = event["issue"]
     issue = _find_jira_issue(jira, gh_issue, True)
 
-    issue.update(fields = {
-        "description" : _get_description(gh_issue),
-        "summary" : _get_summary(gh_issue)
+    issue.update(fields={
+        "description": _get_description(gh_issue),
+        "summary": _get_summary(gh_issue)
     }, notify=False)
 
     _leave_jira_issue_comment(jira, event, "edited", True, jira_issue=issue)
 
 
 def handle_issue_closed(jira, event):
-    # note: Not auto-closing the synced JIRA issue because GitHub issues often get closed for the wrong
-    # reasons - ie the user found a workaround but the root cause still exists.
-     _leave_jira_issue_comment(jira, event, "closed", False)
+    # note: Not auto-closing the synced JIRA issue because GitHub
+    # issues often get closed for the wrong reasons - ie the user
+    # found a workaround but the root cause still exists.
+    _leave_jira_issue_comment(jira, event, "closed", False)
 
 
 def handle_issue_deleted(jira, event):
@@ -67,7 +70,8 @@ def handle_issue_reopened(jira, event):
     _leave_jira_issue_comment(jira, event, "reopened", True)
 
 
-def _leave_jira_issue_comment(jira, event, verb, should_create, jira_issue=None):
+def _leave_jira_issue_comment(jira, event, verb, should_create,
+                              jira_issue=None):
     """
     Leave a simple comment that the GitHub issue corresponding to this event was 'verb' by the GitHub user in question.
 
@@ -107,11 +111,16 @@ def _markdown2wiki(markdown):
     """
     with tempfile.NamedTemporaryFile('w+') as mdf:  # note: this won't work on Windows
         mdf.write(markdown)
+        if not markdown.endswith('\n'):
+            mdf.write('\n')
+        mdf.flush()
         try:
-            return subprocess.check_output(['markdown2confluence', mdf.name])
+            wiki = subprocess.check_output(['markdown2confluence', mdf.name])
+            return wiki.decode('utf-8', errors='ignore')
         except subprocess.CalledProcessError as e:
             print("Failed to run markdown2confluence: %s. JIRA issue will have raw Markdown contents." % e)
             return markdown
+
 
 def _get_description(gh_issue):
     return """%(github_url)s
@@ -132,9 +141,9 @@ def _get_description(gh_issue):
       {code}
       in the commit message so the commit is linked on GitHub automatically.
     """ % {
-        "github_url" : gh_issue["url"],
-        "github_user" : gh_issue["user"]["login"],
-        "github_description" : _markdown2wiki(gh_issue["body"]),
+        "github_url": gh_issue["url"],
+        "github_user": gh_issue["user"]["login"],
+        "github_description": _markdown2wiki(gh_issue["body"]),
     }
 
 
@@ -145,27 +154,26 @@ def _get_summary(gh_issue):
 def _create_jira_issue(jira, gh_issue):
     summary = _get_summary(gh_issue)
     fields = {
-        "GitHub Reference" : gh_issue["url"],
+        "GitHub Reference": gh_issue["url"],
     }
     description = _get_description(gh_issue)
-    return jira.create_issue(project=JIRA_PROJECT, summary=summary,
+    return jira.create_issue(project=os.environ['JIRA_PROJECT'], summary=summary,
                              description=description, fields=fields)  # TODO: issue type
 
 
 def _find_jira_issue(jira, gh_issue, make_new=False):
     url = gh_issue["url"]
-    r = jira.search_issues('project = "%s" AND "GitHub Reference" = "%s"' % (JIRA_PROJECT, url))
+    r = jira.search_issues('"GitHub Reference" = "%s"' % (url))
     if len(r) == 0:
         print("WARNING: GitHub issue '%s' not found in JIRA." % url)
         if not make_new:
             return None
         else:
             return _create_jira_issue(jira, gh_issue)
-    if len(r > 1):
+    if len(r) > 1:
         print("WARNING: GitHub reference '%s' returns multiple JIRA issues. Returning the first one only." % url)
     return r[0]
 
 
 if __name__ == "__main__":
     main()
-
