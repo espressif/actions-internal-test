@@ -16,6 +16,7 @@ The sync action will continue to update JIRA issues which are moved to other JIR
 The environment variables should be set in the GitHub Workflow:
 
 * `JIRA_PROJECT` is the slug of the JIRA project to create new issues in.
+* `JIRA_ISSUE_TYPE` (optional) the JIRA issue type for new issues to be created with. If not set, "Task" is used.
 
 The following secrets should be set in the workflow:
 
