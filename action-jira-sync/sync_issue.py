@@ -152,13 +152,13 @@ def _get_summary(gh_issue):
 
 
 def _create_jira_issue(jira, gh_issue):
-    summary = _get_summary(gh_issue)
     fields = {
+        "summary": _get_summary(gh_issue),
+        "project": os.environ['JIRA_PROJECT'],
+        "description": _get_description(gh_issue),
         "GitHub Reference": gh_issue["url"],
     }
-    description = _get_description(gh_issue)
-    return jira.create_issue(project=os.environ['JIRA_PROJECT'], summary=summary,
-                             description=description, fields=fields)  # TODO: issue type
+    return jira.create_issue(fields)  # TODO: issue type
 
 
 def _find_jira_issue(jira, gh_issue, make_new=False):

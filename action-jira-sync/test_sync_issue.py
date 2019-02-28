@@ -61,13 +61,12 @@ class TestIssuesEvents(unittest.TestCase):
 
         m_jira = run_sync_issue('issues', event)
 
-        # Check that create_issue() was called with args resembling the GH issue
-        args = m_jira.create_issue.call_args[1]
-        self.assertIn(issue["title"], args["summary"])
-        self.assertIn(issue["body"], args["description"])
-        self.assertIn(issue["url"], args["description"])
-        self.assertIn("GitHub Reference", args["fields"])
-        self.assertEqual(issue["url"], args["fields"]["GitHub Reference"])
+        # Check that create_issue() was called with fields param resembling the GH issue
+        fields = m_jira.create_issue.call_args[0][0]
+        self.assertIn(issue["title"], fields["summary"])
+        self.assertIn(issue["body"], fields["description"])
+        self.assertIn(issue["url"], fields["description"])
+        self.assertEqual(issue["url"], fields["GitHub Reference"])
 
     def test_issue_closed(self):
         self._test_issue_simple_comment("closed")
