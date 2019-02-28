@@ -157,9 +157,9 @@ def _create_jira_issue(jira, gh_issue):
         "project": os.environ['JIRA_PROJECT'],
         "description": _get_description(gh_issue),
         "issuetype": os.environ.get('JIRA_ISSUE_TYPE', 'Task'),
-        "GitHub Reference": gh_issue["url"],
     }
-    return jira.create_issue(fields)
+    issue = jira.create_issue(fields)
+    issue.update(fields={"GitHub Reference": gh_issue["url"]})
 
 
 def _find_jira_issue(jira, gh_issue, make_new=False):
