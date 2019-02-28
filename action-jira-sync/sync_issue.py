@@ -55,10 +55,10 @@ def _get_jira_issue_type(jira, gh_issue):
     for gh_label in gh_labels:
         for issue_type in issue_types:
             type_name = issue_type.name.lower()
-            if gh_label.lower() in [ type_name, "Type: %s" % (type_name,) ]:
+            if gh_label.lower() in [ type_name, "type: %s" % (type_name,) ]:
                 # a match!
-                print("Mapping GitHub label %s to JIRA issue type %s" % (gh_label, issue_type.name))
-                return issue_type
+                print("Mapping GitHub label '%s' to JIRA issue type '%s'" % (gh_label, issue_type.name))
+                return { "id": issue_type.id }  # JIRA API needs JSON here
 
     return None
 
