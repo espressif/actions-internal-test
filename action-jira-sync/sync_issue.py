@@ -4,9 +4,11 @@ from github import Github
 import pprint
 import json
 import os
+import random
 import re
 import subprocess
 import tempfile
+import time
 
 
 def main():
@@ -243,13 +245,21 @@ def _create_jira_issue(jira, gh_issue):
     return issue
 
 
-def _find_jira_issue(jira, gh_issue, make_new=False):
+def _find_jira_issue(jira, gh_issue, make_new=False, second_try=False):
     url = gh_issue["html_url"]
-    r = jira.search_issues('"GitHub Reference" = "%s"' % (url))
+    jql_query = '"GitHub Reference" = "%s"' % (url)
+    r = jira.search_issues(jql_query)
     if len(r) == 0:
         print("WARNING: GitHub issue '%s' not found in JIRA." % url)
         if not make_new:
             return None
+        elif not second_try:
+            # Wait a random amount of time to see if this JIRA issue is still being created by another
+            # GitHub Action. This is a hacky way to try and avoid the case where a GitHub issue is created
+            # and edited in a short window of time, and the two GitHub Actions race each other and produce
+            # two JIRA issues. It may still happen sometimes, though.
+            time.sleep(random.randrange(30, 90))
+            return _find_jira_issue(jira, gh_issue, True, True)
         else:
             return _create_jira_issue(jira, gh_issue)
     if len(r) > 1:
