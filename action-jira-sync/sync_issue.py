@@ -167,8 +167,9 @@ def _update_link_resolved(jira, gh_issue, jira_issue):
     resolved = gh_issue["state"] == "closed"
     for link in jira.remote_links(jira_issue):
         if link.globalId == gh_issue["html_url"]:
-            link.update(fields={
-                "resolved": "true" if resolved else "false"})
+            new_link = dict(link.raw["object"])  # RemoteLink update() requires all fields as a JSON object, it seems
+            new_link["status"]["resolved"] = resolved
+            link.update(new_link)
 
 def _markdown2wiki(markdown):
     """
