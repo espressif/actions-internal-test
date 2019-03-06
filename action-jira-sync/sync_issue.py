@@ -284,7 +284,7 @@ def _find_jira_issue(jira, gh_issue, make_new=False, second_try=False):
         if m is not None:
             try:
                 issue = jira.issue(m.group(1))
-                if gh_issue["html_url"] in issue.description:
+                if gh_issue["html_url"] in issue.fields.description:
                     print("Looks like JIRA issue %s was manually synced. Adding a remote link for future lookups." % issue.key)
                     _add_remote_link(jira, issue, gh_issue)
                     return issue
