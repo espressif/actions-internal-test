@@ -164,10 +164,16 @@ def handle_comment_deleted(jira, event):
 
 
 def _update_link_resolved(jira, gh_issue, jira_issue):
+    """
+    Update the 'resolved' status of the external link, based on the GitHub issue
+
+    Also updates the title, if it has changed.
+    """
     resolved = gh_issue["state"] == "closed"
     for link in jira.remote_links(jira_issue):
         if link.globalId == gh_issue["html_url"]:
             new_link = dict(link.raw["object"])  # RemoteLink update() requires all fields as a JSON object, it seems
+            new_link["title"] = gh_issue["title"]
             new_link["status"]["resolved"] = resolved
             link.update(new_link)
 

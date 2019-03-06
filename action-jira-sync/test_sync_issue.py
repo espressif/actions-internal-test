@@ -56,6 +56,13 @@ def run_sync_issue(event_name, event, jira_issue=None):
 
         if jira_issue is not None:
             jira_class.return_value.search_issues.return_value = [jira_issue]
+            remote_link = create_autospec(jira.resources.RemoteLink)
+            remote_link.globalId = event["issue"]["html_url"]
+            remote_link.raw = {"object": {
+                "title": event["issue"]["title"],
+                "status": { },
+            }}
+            jira_class.return_value.remote_links.return_value = [remote_link]
         else:
             jira_class.return_value.search_issues.return_value = []
 
@@ -109,13 +116,23 @@ class TestIssuesEvents(unittest.TestCase):
         self.assertIn("title", update_args)
 
     def test_issue_closed(self):
-        self._test_issue_simple_comment("closed")
+        m_jira = self._test_issue_simple_comment("closed")
+
+        # check resolved was set
+        new_object = m_jira.remote_links.return_value[0].update.call_args[0][0]
+        new_status = new_object["status"]
+        self.assertEqual(True, new_status["resolved"])
 
     def test_issue_deleted(self):
         self._test_issue_simple_comment("deleted")
 
     def test_issue_reopened(self):
-        self._test_issue_simple_comment("deleted")
+        m_jira = self._test_issue_simple_comment("reopened")
+
+        # check resolved was cleared
+        new_object = m_jira.remote_links.return_value[0].update.call_args[0][0]
+        new_status = new_object["status"]
+        self.assertEqual(False, new_status["resolved"])
 
     def test_issue_edited(self):
         issue = {"html_url": "https://github.com/fake/fake/issues/11",
@@ -180,7 +197,7 @@ class TestIssueCommentEvents(unittest.TestCase):
         self._test_issue_comment("deleted")
 
     def test_issue_comment_edited(self):
-        self._test_issue_comment("edited", extra_event_data={ "changes" : {"body": {"from": "I am the old comment body" } }}) 
+        self._test_issue_comment("edited", extra_event_data={ "changes" : {"body": {"from": "I am the old comment body" } }})
 
     def _test_issue_comment(self, action, gh_issue=None, gh_comment=None, extra_event_data={}):
         """
