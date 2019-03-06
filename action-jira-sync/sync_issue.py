@@ -282,12 +282,15 @@ def _find_jira_issue(jira, gh_issue, make_new=False, second_try=False):
         JIRA_KEY_REGEX = r")"
         m = re.search(r"\(([A-Z]+-\d+)\)\s*$", gh_issue["title"])
         if m is not None:
-            issue = jira.issue(m.group(0))
-            if issue is not None:
+            try:
+                issue = jira.issue(m.group(1))
                 if gh_issue["html_url"] in issue.description:
                     print("Looks like JIRA issue %s was manually synced. Adding a remote link for future lookups." % issue.key)
                     _add_remote_link(jira, issue, gh_issue)
                     return issue
+            except jira.exceptions.JIRAError:
+                pass  # issue doesn't exist or unauthorized
+
             # note: not logging anything on failure to avoid
             # potential information leak about other JIRA IDs
 
