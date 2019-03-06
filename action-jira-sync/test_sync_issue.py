@@ -9,9 +9,6 @@ import unittest.mock
 from unittest.mock import create_autospec
 import tempfile
 
-# mock custom field ID for the 'GitHub Reference' field
-MOCK_GITHUB_REFERENCE_ID = "custom_field_111111"
-
 MOCK_GITHUB_TOKEN = "iamagithubtoken"
 
 def run_sync_issue(event_name, event, jira_issue=None):
@@ -39,12 +36,6 @@ def run_sync_issue(event_name, event, jira_issue=None):
         github_class = create_autospec(github.Github)
 
         jira_class = create_autospec(jira.JIRA)
-
-        # fake a fields() response with all fields in instance
-        jira_class.return_value.fields.return_value = [
-            { "id": MOCK_GITHUB_REFERENCE_ID,
-              "name": "GitHub Reference" }
-            ]
 
         # fake a issue_types response also
         issue_type_bug = create_autospec(jira.resources.IssueType)
@@ -87,7 +78,8 @@ class TestIssuesEvents(unittest.TestCase):
                  "title": "Test issue",
                  "body": "I am a new test issue\nabc\n\n",
                  "user": {"login": "testuser"},
-                 "labels" : [ { "name": "bug" } ]
+                 "labels" : [ { "name": "bug" } ],
+                 "state": "open",
                  }
         event = {"action": "opened",
                  "issue": issue
@@ -100,7 +92,11 @@ class TestIssuesEvents(unittest.TestCase):
         self.assertIn(issue["title"], fields["summary"])
         self.assertIn(issue["body"], fields["description"])
         self.assertIn(issue["html_url"], fields["description"])
-        self.assertEqual(issue["html_url"], fields[MOCK_GITHUB_REFERENCE_ID])
+
+        # Check that add_remote_link() was called
+        rl_args = m_jira.add_remote_link.call_args[1]
+        self.assertEqual(m_jira.create_issue.return_value, rl_args["issue"])
+        self.assertEqual(issue["html_url"], rl_args["globalId"])
 
         # check that the github repo was updated via expected sequence of API calls
         sync_issue.Github.assert_called_with(MOCK_GITHUB_TOKEN)
@@ -128,6 +124,7 @@ class TestIssuesEvents(unittest.TestCase):
                  "title": "Edited issue",
                  "body": "Edited issue content goes here",
                  "user": {"login": "edituser"},
+                 "state": "open",
                  "labels" : []
                  }
 
@@ -153,6 +150,7 @@ class TestIssuesEvents(unittest.TestCase):
                         "body": "I am a test issue\nabc\n\n",
                         "user": {"login": "otheruser"},
                         "labels": [{"name" : "Type: New Feature"}],
+                        "state": "closed" if action in ["closed", "deleted"] else "open",
                         }
         event = {"action": action,
                  "issue": gh_issue

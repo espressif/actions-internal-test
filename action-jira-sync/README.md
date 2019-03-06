@@ -13,13 +13,29 @@ This is a GitHub action that performs simple one way syncing of GitHub issues in
 * When the GitHub issue is closed or deleted a comment is created on the JIRA issue.
 * When the GitHub issue is labelled, the JIRA Issue Type may be set accordingly (see below).
 
-# Sync Connection
+# 'Synced From' Link
 
-The JIRA custom URL field named "GitHub Reference" must exist in the configured JIRA project. It is used to link the JIRA issue to the GitHub issue.
+When create a synced issue, the action creates a [Remote Issue Link](https://developer.atlassian.com/server/jira/platform/creating-remote-issue-links/) on the JIRA issue, where the "[globalID](https://developer.atlassian.com/server/jira/platform/using-fields-in-remote-issue-links/#globalid)" is the GitHub issue URL.
 
-The sync action will continue to update JIRA issues which are moved to other JIRA projects, provided the "GitHub Reference" field is moved to the other JIRA project as well.
+This remote issue link is used to find existing synced issues when changes happen.
 
-To break a link between a GitHub issue and a JIRA issue, clear the GitHub Reference field. (Note that if the GitHub Issue is updated later on, this action may create a new JIRA issue to track it.)
+The sync action will continue to update JIRA issues which are moved to other JIRA projects, provided the remote issue link is moved as well.
+
+To break a link between a GitHub issue and a JIRA issue, delete the Remote Issue Link. (Note that if the GitHub Issue is updated later on, this action may create a new JIRA issue to track it.)
+
+Note that manually created Remote Issue Links to GitHub issues will not have the globalID set, so they won't work (JIRA doesn't give a way to search for Remote Issue Links by URL, only by globalID, so there's no automated solution to this problem.)
+
+# Manually Linking A GitHub Issue
+
+It's not possible to create a Remote Issue Link with the correct `globalID` without using the JIRA API. Instead, to manually connect an existing GitHub issue with a JIRA issue in the Web UI:
+
+1. Check that no other JIRA issue is syncing this GitHub issue (advanced search for `issue in issuesWithRemoteLinksByGlobalId("GitHub Issue URL")`).
+2. Put the URL of the GitHub issue in the JIRA issue description.
+3. Put the JIRA issue key at the end of the GitHub issue title, in parentheses like this: `GitHub Issue title (JIRAKEY-123)`
+
+The GitHub action will create the "Synced from" link the next time it syncs this issue (probably immediately).
+
+If the URL of the GitHub issue is not found in the JIRA issue description, nothing will happen.
 
 # Issue Types
 

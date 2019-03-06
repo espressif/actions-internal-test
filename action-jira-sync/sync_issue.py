@@ -78,6 +78,8 @@ def handle_issue_edited(jira, event):
         "issuetype": _get_jira_issue_type(jira, gh_issue),
     })
 
+    _update_link_resolved(jira, gh_issue, issue)
+
     _leave_jira_issue_comment(jira, event, "edited", True, jira_issue=issue)
 
 
@@ -85,7 +87,8 @@ def handle_issue_closed(jira, event):
     # note: Not auto-closing the synced JIRA issue because GitHub
     # issues often get closed for the wrong reasons - ie the user
     # found a workaround but the root cause still exists.
-    _leave_jira_issue_comment(jira, event, "closed", False)
+    issue = _leave_jira_issue_comment(jira, event, "closed", False)
+    _update_link_resolved(jira, event["issue"], issue)
 
 
 def handle_issue_label_change(jira, event):
@@ -101,7 +104,8 @@ def handle_issue_deleted(jira, event):
 
 
 def handle_issue_reopened(jira, event):
-    _leave_jira_issue_comment(jira, event, "reopened", True)
+    issue = _leave_jira_issue_comment(jira, event, "reopened", True)
+    _update_link_resolved(jira, event["issue"], issue)
 
 
 def _leave_jira_issue_comment(jira, event, verb, should_create,
@@ -119,6 +123,7 @@ def _leave_jira_issue_comment(jira, event, verb, should_create,
         if jira_issue is None:
             return
     jira.add_comment(jira_issue.id, "The [GitHub issue|%s] has been %s by @%s" % (gh_issue["html_url"], verb, gh_issue["user"]["login"]))
+    return jira_issue
 
 
 def _get_jira_comment_body(gh_comment, body=None):
@@ -157,6 +162,12 @@ def handle_comment_deleted(jira, event):
     jira_issue = _find_jira_issue(jira, event["issue"], True)
     jira.add_comment(jira_issue.id, "@%s deleted [GitHub issue comment|%s]" % (gh_comment["user"]["login"], gh_comment["html_url"]))
 
+
+def _update_link_resolved(jira, gh_issue, jira_issue):
+    resolved = gh_issue["state"] == "closed"
+    for link in jira.remote_links(jira_issue):
+        if link.globalId == gh_issue["html_url"]:
+            link.update(resolved="true" if resolved else "false")
 
 def _markdown2wiki(markdown):
     """
@@ -211,12 +222,6 @@ def _get_summary(gh_issue):
 
 
 def _create_jira_issue(jira, gh_issue):
-    # get the custom field ID for 'GitHub Reference' on this instance
-    try:
-        github_reference_id = [f['id'] for f in jira.fields() if f["name"] == "GitHub Reference" ][0]
-    except IndexError:
-        raise RuntimeError("Custom field 'GitHub Reference' is not configured on this JIRA instance")
-
     issuetype = _get_jira_issue_type(jira, gh_issue)
     if issuetype is None:
         issuetype = os.environ.get('JIRA_ISSUE_TYPE', 'Task')
@@ -226,31 +231,66 @@ def _create_jira_issue(jira, gh_issue):
         "project": os.environ['JIRA_PROJECT'],
         "description": _get_description(gh_issue),
         "issuetype": issuetype,
-        github_reference_id: gh_issue["html_url"]
     }
     issue = jira.create_issue(fields)
 
-    # append the new JIRA slug to the GitHub issue
-    # (updates made by github actions don't trigger new actions)
+    _add_remote_link(jira, issue, gh_issue)
+    _update_github_with_jira_key(gh_issue, issue)
+
+    return issue
+
+def _add_remote_link(jira, issue, gh_issue):
+    """
+    Add the JIRA "remote link" field that points to the issue
+    """
+    gh_url = gh_issue["html_url"]
+    jira.add_remote_link(issue=issue,
+                         destination={"url": gh_url,
+                                      "title": gh_issue["title"],
+                                      },
+                         globalId=gh_url,  # globalId is always the GitHub URL
+                         relationship="synced from")
+
+
+def _update_github_with_jira_key(gh_issue, jira_issue):
+    """ Append the new JIRA issue key to the GitHub issue
+        (updates made by github actions don't trigger new actions)
+    """
     github = Github(os.environ["GITHUB_TOKEN"])
 
+    # extract the 'org/repo' canonical name from the repo URL
+    #
     # note: github also gives us 'repository' JSON which has a 'full_name', but this is simpler
     # for the API structure.
     repo_name = re.search(r'[^/]+/[^/]+$', gh_issue["repository_url"]).group(0)
     repo = github.get_repo(repo_name)
 
     api_gh_issue = repo.get_issue(gh_issue["number"])
-    api_gh_issue.edit(title="%s (%s)" % (api_gh_issue.title, issue.key))
-
-    return issue
+    api_gh_issue.edit(title="%s (%s)" % (api_gh_issue.title, jira_issue.key))
 
 
 def _find_jira_issue(jira, gh_issue, make_new=False, second_try=False):
     url = gh_issue["html_url"]
-    jql_query = '"GitHub Reference" = "%s"' % (url)
+    jql_query = 'issue in issuesWithRemoteLinksByGlobalId("%s") order by updated desc' % url
+    print("JQL query: %s" % jql_query)
     r = jira.search_issues(jql_query)
     if len(r) == 0:
-        print("WARNING: GitHub issue '%s' not found in JIRA." % url)
+        print("WARNING: No JIRA issues have a remote link with globalID '%s'" % url)
+
+        # Check if the github title ends in (JIRA-KEY). If we can find that JIRA issue and the JIRA issue description contains the
+        # GitHub URL, assume this item was manually synced over.
+        JIRA_KEY_REGEX = r")"
+        m = re.search(r"\(([A-Z]+-\d+)\)\s*$", gh_issue["title"])
+        if m is not None:
+            issue = jira.issue(m.group(0))
+            if issue is not None:
+                if gh_issue["html_url"] in issue.description:
+                    print("Looks like JIRA issue %s was manually synced. Adding a remote link for future lookups." % issue.key)
+                    _add_remote_link(jira, issue, gh_issue)
+                    return issue
+            # note: not logging anything on failure to avoid
+            # potential information leak about other JIRA IDs
+
         if not make_new:
             return None
         elif not second_try:
@@ -263,7 +303,7 @@ def _find_jira_issue(jira, gh_issue, make_new=False, second_try=False):
         else:
             return _create_jira_issue(jira, gh_issue)
     if len(r) > 1:
-        print("WARNING: GitHub reference '%s' returns multiple JIRA issues. Returning the first one only." % url)
+        print("WARNING: Remote Link globalID '%s' returns multiple JIRA issues. Using last-updated only." % url)
     return r[0]
 
 
