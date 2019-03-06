@@ -167,7 +167,8 @@ def _update_link_resolved(jira, gh_issue, jira_issue):
     resolved = gh_issue["state"] == "closed"
     for link in jira.remote_links(jira_issue):
         if link.globalId == gh_issue["html_url"]:
-            link.update(resolved="true" if resolved else "false")
+            link.update(fields={
+                "resolved": "true" if resolved else "false"})
 
 def _markdown2wiki(markdown):
     """
