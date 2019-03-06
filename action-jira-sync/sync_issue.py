@@ -189,9 +189,7 @@ def _markdown2wiki(markdown):
 
 
 def _get_description(gh_issue):
-    return """%(github_url)s
-
-    Opened by GitHub user @%(github_user)s:
+    return """[GitHub Issue|%(github_url)s] from user @%(github_user)s:
 
     %(github_description)s
 
