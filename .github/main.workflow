@@ -14,7 +14,7 @@ workflow "Sync issue comments to JIRA" {
 }
 
 action "Sync to JIRA" {
-  uses = "espressif/github-actions/sync_issues_to_jira@bugfix/issue_type"
+  uses = "espressif/github-actions/sync_issues_to_jira@feature/sync_prs"
   secrets = ["GITHUB_TOKEN", "JIRA_URL", "JIRA_USER", "JIRA_PASS"]
   env = {
     JIRA_PROJECT = "IDFSYNTEST"
