@@ -1,0 +1,16 @@
+name: Sync issue comments to JIRA
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  release_zips:
+    name: Create release zip files
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Create a recursive clone source zip for a Release
+        uses: espressif/github-actions/release_zips@feature/release_zips
+        env:
+            RELEASE_PROJECT_NAME: ESP-IDF
