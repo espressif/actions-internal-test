@@ -1,0 +1,9 @@
+[submodule "test2"]
+	path = test2
+	url = https://github.com/githubtraining/hellogitworld.git
+[submodule "test3"]
+	path = test3
+	url = https://github.com/githubtraining/hellogitworld.git
+[submodule "test4"]
+	path = test4
+	url = https://github.com/githubtraining/hellogitworld.git
