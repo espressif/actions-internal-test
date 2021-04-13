@@ -14,3 +14,4 @@ jobs:
         uses: espressif/github-actions/release_zips@feature/release_zips
         env:
             RELEASE_PROJECT_NAME: ESP-IDF
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
