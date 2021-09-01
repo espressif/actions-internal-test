@@ -23,13 +23,17 @@ import gitlab
 import requests
 from git import Git, Repo
 
-def pr_download_patch(pr_patch_url, project_name):
+def pr_download_patch(pr_rest_url, project_name):
     print('Downloading patch for PR...')
     # TODO: If repo == private, added headers for REST API calls
     # Requires Github Access Token, with Push Access
     GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
-    print(pr_patch_url)
-    data = requests.get(pr_patch_url, headers={'Authorization': 'token ' + GITHUB_TOKEN})
+    
+    req_header = {
+        'Authorization': 'token ' + GITHUB_TOKEN,
+        'Accept': 'application/vnd.github.VERSION.patch'
+    }
+    data = requests.get(pr_rest_url, headers=req_header)
     print(data)
 
     file_path = project_name + '/diff.patch'
@@ -96,8 +100,9 @@ def main():
 
     pr_num = event["pull_request"]["number"]
     pr_branch = 'contrib/github_pr_' + str(pr_num)
-    
-    pr_files_url = event["pull_request"]["url"] + '/files'
+    pr_rest_url = event["pull_request"]["url"]
+
+    pr_files_url = pr_rest_url + '/files'
     # Check whether the PR has modified forbidden files
     pr_check_forbidden_files(pr_files_url)
 
@@ -113,7 +118,7 @@ def main():
 
     # Getting the PR body and URL
     pr_body = event["pull_request"]["body"]
-    pr_url = event["pull_request"]["html_url"]
+    pr_html_url = event["pull_request"]["html_url"]
 
     # Add Gitlab private token and URL as an encrypted secret
     print('Connecting to gitlab...')
@@ -128,9 +133,8 @@ def main():
     gl_project_url = GITLAB_URL[: HDR_LEN] + GITLAB_TOKEN + ':' + GITLAB_TOKEN + '@' + GITLAB_URL[HDR_LEN :] + '/' + project_fullname + '.git'
     print(Git(".").clone(gl_project_url))
 
-    pr_patch_url = event["pull_request"]["patch_url"]
     # Download the patch for the given PR
-    pr_download_patch(pr_patch_url, project_name)
+    pr_download_patch(pr_rest_url, project_name)
 
     git = Git(project_name)
     repo = Repo(project_name)
@@ -160,14 +164,14 @@ def main():
     # print('Applying patch...')
     # print(git.execute(['git','am', '--signoff', 'diff.patch']))
 
-    commit = repo.head.commit
-    new_cmt_msg = commit.message + '\nCloses ' + pr_url
+    # commit = repo.head.commit
+    # new_cmt_msg = commit.message + '\nCloses ' + pr_html_url
 
-    print('Amending commit message (Adding additional info about commit)...')
-    print(git.execute(['git','commit', '--amend', '-m', new_cmt_msg]))
+    # print('Amending commit message (Adding additional info about commit)...')
+    # print(git.execute(['git','commit', '--amend', '-m', new_cmt_msg]))
 
-    print('Pushing to remote...')
-    print(git.push('--set-upstream', 'origin', pr_branch))
+    # print('Pushing to remote...')
+    # print(git.push('--set-upstream', 'origin', pr_branch))
 
     # Deleting local repo
     shutil.rmtree(project_name)
