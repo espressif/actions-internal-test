@@ -38,19 +38,18 @@ def pr_check_forbidden_files(pr_files_url):
 
     r = requests.get(pr_files_url, headers={'Authorization': 'token ' + GITHUB_TOKEN})
     r_data = r.json()
-    print(r_data)
-    
-    # pr_files = [file_info['filename'] for file_info in r_data
-    #             if (file_info['filename']).find('.gitlab') != -1 or (file_info['filename']).find('.github') != -1]
-    # if pr_files:
-    #     raise SystemError('PR modifying forbidden files!!!')
+
+    pr_files = [file_info['filename'] for file_info in r_data
+                if (file_info['filename']).find('.gitlab') != -1 or (file_info['filename']).find('.github') != -1]
+    if pr_files:
+        raise SystemError('PR modifying forbidden files!!!')
 
 
-def pr_check_approver_access(project_name, pr_approver):
+def pr_check_approver_access(project_users_url, pr_approver):
     # TODO: Requires Github Access Token, with Push Access
     GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
 
-    r = requests.get('https://api.github.com/repos/' + project_name + '/collaborators', headers={'Authorization': 'token ' + GITHUB_TOKEN})
+    r = requests.get(project_users_url, headers={'Authorization': 'token ' + GITHUB_TOKEN})
     r_data = r.json()
 
     pr_appr_perm = [usr for usr in r_data if usr['login'] == pr_approver][0]['permissions']
@@ -84,6 +83,8 @@ def main():
         raise SystemError("PR base illegal! Should be the master branch!")
     
     project_name = event["repository"]["full_name"]
+    project_users_url = event["repository"]["url"] + '/collaborators'
+
     pr_num = event["pull_request"]["number"]
     pr_branch = 'contrib/github_pr_' + str(pr_num)
     
@@ -91,9 +92,9 @@ def main():
     # Check whether the PR has modified forbidden files
     pr_check_forbidden_files(pr_files_url)
 
-    # pr_approver = event["review"]["user"]["login"]
-    # # Checks whether the approver access level is above required; needs Github access token
-    # pr_check_approver_access(project_name, pr_approver)
+    pr_approver = event["review"]["user"]["login"]
+    # Checks whether the approver access level is above required; needs Github access token
+    pr_check_approver_access(project_users_url, pr_approver)
 
     # # Getting the PR title
     # pr_title = event["pull_request"]["title"]
