@@ -29,6 +29,7 @@ def pr_download_patch(pr_patch_url, project_name):
     # Requires Github Access Token, with Push Access
     GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
     data = requests.get(pr_patch_url, headers={'Authorization': 'token ' + GITHUB_TOKEN})
+    print(data.json())
 
     file_path = project_name + '/diff.patch'
     f = open(file_path, 'wb')
