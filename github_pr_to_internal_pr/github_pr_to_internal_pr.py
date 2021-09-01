@@ -111,9 +111,9 @@ def main():
 
     # Getting the PR title
     pr_title = event["pull_request"]["title"]
-    idx = pr_title.find(os.environ['JIRA_PROJECT']) # Finding the JIRA issue tag
-    pr_title_desc = pr_title[0 : idx - 2] # For space character
-    pr_jira_issue = pr_title[idx : -1]
+    # idx = pr_title.find(os.environ['JIRA_PROJECT']) # Finding the JIRA issue tag
+    # pr_title_desc = pr_title[0 : idx - 2] # For space character
+    # pr_jira_issue = pr_title[idx : -1]
 
     # Getting the PR body and URL
     pr_body = event["pull_request"]["body"]
@@ -173,21 +173,21 @@ def main():
     shutil.rmtree(project_name)
 
     # NOTE: Remote takes some time to register a branch
-    time.sleep(30)
+    time.sleep(15)
 
-    # print('Creating a merge request...')
-    # project_gl = gl.projects.get(project_fullname)
-    # mr = project_gl.mergerequests.create({'source_branch': pr_branch, 'target_branch': 'master', 'title': pr_title_desc})
+    print('Creating a merge request...')
+    project_gl = gl.projects.get(project_fullname)
+    mr = project_gl.mergerequests.create({'source_branch': pr_branch, 'target_branch': 'master', 'title': pr_title})
 
-    # print('Updating merge request description...')
-    # mr_desc = pr_body + '\n(Add more info here)' + '\n## Related'
-    # mr_desc +=  '\n* Closes ' + pr_jira_issue
-    # mr_desc += '\n## Release notes (Mandatory)\n ### To-be-added'
+    print('Updating merge request description...')
+    mr_desc = pr_body + '\n(Add more info here)' + '\n## Related'
+    mr_desc +=  '\n* Closes ' + 'Unknown'
+    mr_desc += '\n## Release notes (Mandatory)\n ### To-be-added'
 
-    # mr.description = mr_desc
-    # mr.save()
+    mr.description = mr_desc
+    mr.save()
 
-    # print('Done with the merge request!')
+    print('Done with the merge request!')
 
 
 if __name__ == '__main__':
