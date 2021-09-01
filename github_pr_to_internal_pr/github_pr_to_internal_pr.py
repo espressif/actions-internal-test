@@ -119,15 +119,19 @@ def main():
 
     # Add Gitlab private token and URL as an encrypted secret
     print('Connecting to gitlab...')
-    gl_url = os.environ['GITLAB_URL']
-    GITLAB_TOKEN = os.environ['GITLAB_TOKEN']
 
     gl = gitlab.Gitlab(url=os.environ['GITLAB_URL'], private_token=os.environ['GITLAB_TOKEN'])
     gl.auth()
 
-    # HDR_LEN = 8
-    # gl_project_url = gl_url[: HDR_LEN] + GITLAB_TOKEN + ':' + GITLAB_TOKEN + '@' + gl_url[HDR_LEN :] + '/' + project_fullname + '.git'
-    # print(Git(".").clone(gl_project_url))
+    HDR_LEN = 8
+    gl_project_url = gl_url[: HDR_LEN] + os.environ['GITLAB_TOKEN'] + ':' + os.environ['GITLAB_TOKEN'] + '@' + gl_url[HDR_LEN :] + '/' + project_fullname + '.git'
+    print(Git(".").clone(gl_project_url))
+
+    print(os.system('ls'))
+
+    pr_patch_url = event["pull_request"]["patch_url"]
+    # Download the patch for the given PR
+    pr_download_patch(pr_patch_url, project_name)
 
     # git = Git(project_name)
     # repo = Repo(project_name)
