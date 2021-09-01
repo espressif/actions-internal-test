@@ -86,7 +86,7 @@ def main():
     action = event["action"]
     state = event["review"]["state"]
 
-    if event_name != 'pull_request_review' or state != 'commented':
+    if event_name != 'pull_request_review' or state != 'approved':
         raise SystemError("False Trigger!")
 
     pr_base = event["pull_request"]["base"]["ref"]
@@ -111,9 +111,9 @@ def main():
 
     # Getting the PR title
     pr_title = event["pull_request"]["title"]
-    # idx = pr_title.find(os.environ['JIRA_PROJECT']) # Finding the JIRA issue tag
-    # pr_title_desc = pr_title[0 : idx - 2] # For space character
-    # pr_jira_issue = pr_title[idx : -1]
+    idx = pr_title.find(os.environ['JIRA_PROJECT']) # Finding the JIRA issue tag
+    pr_title_desc = pr_title[0 : idx - 2] # For space character
+    pr_jira_issue = pr_title[idx : -1]
 
     # Getting the PR body and URL
     pr_body = event["pull_request"]["body"]
@@ -177,11 +177,11 @@ def main():
 
     print('Creating a merge request...')
     project_gl = gl.projects.get(project_fullname)
-    mr = project_gl.mergerequests.create({'source_branch': pr_branch, 'target_branch': 'master', 'title': pr_title})
+    mr = project_gl.mergerequests.create({'source_branch': pr_branch, 'target_branch': 'master', 'title': pr_title_desc})
 
     print('Updating merge request description...')
     mr_desc = pr_body + '\n(Add more info here)' + '\n## Related'
-    mr_desc +=  '\n* Closes ' + 'Unknown'
+    mr_desc +=  '\n* Closes ' + pr_jira_issue
     mr_desc += '\n## Release notes (Mandatory)\n ### To-be-added'
 
     mr.description = mr_desc
