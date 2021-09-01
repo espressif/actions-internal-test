@@ -152,8 +152,11 @@ def main():
     print('Checking out to new branch for contribution...')
     print(git.checkout('HEAD', b=pr_branch))
 
-    print('Applying patch...')
-    print(git.execute(['git','am', '--signoff', 'diff.patch']))
+    with open(project_name + '/diff.patch', 'r') as f:
+        print(f.read())
+
+    # print('Applying patch...')
+    # print(git.execute(['git','am', '--signoff', 'diff.patch']))
 
     commit = repo.head.commit
     new_cmt_msg = commit.message + '\nCloses ' + pr_url
