@@ -35,11 +35,12 @@ def pr_download_patch(pr_patch_url):
 def pr_check_forbidden_files(pr_files_url):
     r = requests.get(pr_files_url)
     r_data = r.json()
+    print(r_data)
     
-    pr_files = [file_info['filename'] for file_info in r_data
-                if (file_info['filename']).find('.gitlab') != -1 or (file_info['filename']).find('.github') != -1]
-    if pr_files:
-        raise SystemError('PR modifying forbidden files!!!')
+    # pr_files = [file_info['filename'] for file_info in r_data
+    #             if (file_info['filename']).find('.gitlab') != -1 or (file_info['filename']).find('.github') != -1]
+    # if pr_files:
+    #     raise SystemError('PR modifying forbidden files!!!')
 
 
 def pr_check_approver_access(project_name, pr_approver):
@@ -66,7 +67,7 @@ def main():
     # The path of the file with the complete webhook event payload. For example, /github/workflow/event.json.
     with open(os.environ['GITHUB_EVENT_PATH'], 'r') as f:
         event = json.load(f)
-        print(json.dumps(event, indent=4))
+        # print(json.dumps(event, indent=4))
 
     event_name = os.environ['GITHUB_EVENT_NAME']  # The name of the webhook event that triggered the workflow.
     action = event["action"]
