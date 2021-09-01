@@ -34,7 +34,6 @@ def pr_download_patch(pr_rest_url, project_name):
         'Accept': 'application/vnd.github.VERSION.patch'
     }
     data = requests.get(pr_rest_url, headers=req_header)
-    print(data)
 
     file_path = project_name + '/diff.patch'
     f = open(file_path, 'wb')
@@ -53,7 +52,7 @@ def pr_check_forbidden_files(pr_files_url):
     pr_files = [file_info['filename'] for file_info in r_data
                 if (file_info['filename']).find('.gitlab') != -1 or (file_info['filename']).find('.github') != -1]
     if pr_files:
-        raise SystemError('PR modifying forbidden files!!!')
+        raise SystemError("PR modifying forbidden files!!!")
 
 
 def pr_check_approver_access(project_users_url, pr_approver):
@@ -66,7 +65,7 @@ def pr_check_approver_access(project_users_url, pr_approver):
 
     pr_appr_perm = [usr for usr in r_data if usr['login'] == pr_approver][0]['permissions']
     if not pr_appr_perm['triage']:
-        raise SystemError('PR Approver Access is below TRIAGE level!')
+        raise SystemError("PR Approver Access is below TRIAGE level!")
 
 
 def main():
@@ -158,26 +157,23 @@ def main():
     print('Checking out to new branch for contribution...')
     print(git.checkout('HEAD', b=pr_branch))
 
-    with open(project_name + '/diff.patch', 'r') as f:
-        print(f.read())
+    print('Applying patch...')
+    print(git.execute(['git','am', '--signoff', 'diff.patch']))
 
-    # print('Applying patch...')
-    # print(git.execute(['git','am', '--signoff', 'diff.patch']))
+    commit = repo.head.commit
+    new_cmt_msg = commit.message + '\nCloses ' + pr_html_url
 
-    # commit = repo.head.commit
-    # new_cmt_msg = commit.message + '\nCloses ' + pr_html_url
+    print('Amending commit message (Adding additional info about commit)...')
+    print(git.execute(['git','commit', '--amend', '-m', new_cmt_msg]))
 
-    # print('Amending commit message (Adding additional info about commit)...')
-    # print(git.execute(['git','commit', '--amend', '-m', new_cmt_msg]))
-
-    # print('Pushing to remote...')
-    # print(git.push('--set-upstream', 'origin', pr_branch))
+    print('Pushing to remote...')
+    print(git.push('--set-upstream', 'origin', pr_branch))
 
     # Deleting local repo
     shutil.rmtree(project_name)
 
-    # # NOTE: Remote takes some time to register a branch
-    # time.sleep(30)
+    # NOTE: Remote takes some time to register a branch
+    time.sleep(30)
 
     # print('Creating a merge request...')
     # project_gl = gl.projects.get(project_fullname)
