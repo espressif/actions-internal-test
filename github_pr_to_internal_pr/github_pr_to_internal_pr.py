@@ -28,6 +28,7 @@ def pr_download_patch(pr_patch_url, project_name):
     # TODO: If repo == private, added headers for REST API calls
     # Requires Github Access Token, with Push Access
     GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
+    print(GITHUB_TOKEN)
     data = requests.get(pr_patch_url, headers={'Authorization': 'token ' + GITHUB_TOKEN})
 
     file_path = project_name + '/diff.patch'
@@ -123,15 +124,15 @@ def main():
     gl = gitlab.Gitlab(url=os.environ['GITLAB_URL'], private_token=os.environ['GITLAB_TOKEN'])
     gl.auth()
 
-    HDR_LEN = 8
-    gl_project_url = gl_url[: HDR_LEN] + os.environ['GITLAB_TOKEN'] + ':' + os.environ['GITLAB_TOKEN'] + '@' + gl_url[HDR_LEN :] + '/' + project_fullname + '.git'
-    print(Git(".").clone(gl_project_url))
+    # HDR_LEN = 8
+    # gl_project_url = gl_url[: HDR_LEN] + os.environ['GITLAB_TOKEN'] + ':' + os.environ['GITLAB_TOKEN'] + '@' + gl_url[HDR_LEN :] + '/' + project_fullname + '.git'
+    # print(Git(".").clone(gl_project_url))
 
     print(os.system('ls'))
 
-    pr_patch_url = event["pull_request"]["patch_url"]
-    # Download the patch for the given PR
-    pr_download_patch(pr_patch_url, project_name)
+    # pr_patch_url = event["pull_request"]["patch_url"]
+    # # Download the patch for the given PR
+    # pr_download_patch(pr_patch_url, project_name)
 
     # git = Git(project_name)
     # repo = Repo(project_name)
