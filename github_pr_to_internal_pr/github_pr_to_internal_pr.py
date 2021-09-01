@@ -26,6 +26,8 @@ from git import Git, Repo
 def pr_download_patch(pr_patch_url, project_name):
     print('Downloading patch for PR...')
     # TODO: If repo == private, added headers for REST API calls
+    # Requires Github Access Token, with Push Access
+    GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
     data = requests.get(pr_patch_url, headers={'Authorization': 'token ' + GITHUB_TOKEN})
 
     file_path = project_name + '/diff.patch'
