@@ -139,8 +139,8 @@ def main():
     repo = Repo(project_name)
 
     #  Set the config parameters: Better be a espressif bot
-    # repo.config_writer().set_value('user', 'name', os.environ['GIT_CONFIG_NAME']).release()
-    # repo.config_writer().set_value('user', 'email', os.environ['GIT_CONFIG_EMAIL']).release()
+    repo.config_writer().set_value('user', 'name', os.environ['GIT_CONFIG_NAME']).release()
+    repo.config_writer().set_value('user', 'email', os.environ['GIT_CONFIG_EMAIL']).release()
 
     # # Following is the rebase approach for old PRs
     # # TODO: Enable merging PR without rebase for new commits
