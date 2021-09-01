@@ -28,8 +28,9 @@ def pr_download_patch(pr_patch_url, project_name):
     # TODO: If repo == private, added headers for REST API calls
     # Requires Github Access Token, with Push Access
     GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
+    print(pr_patch_url)
     data = requests.get(pr_patch_url, headers={'Authorization': 'token ' + GITHUB_TOKEN})
-    print(data.json())
+    print(data)
 
     file_path = project_name + '/diff.patch'
     f = open(file_path, 'wb')
