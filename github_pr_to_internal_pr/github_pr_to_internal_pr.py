@@ -86,7 +86,7 @@ def main():
         raise SystemError("PR base illegal! Should be the master branch!")
     
     project_fullname = event["repository"]["full_name"]
-    project_org, project_name = project_name.split("/")
+    project_org, project_name = project_fullname.split("/")
     project_users_url = event["repository"]["url"] + '/collaborators'
 
     pr_num = event["pull_request"]["number"]
@@ -123,12 +123,11 @@ def main():
     gl.auth()
 
     # HDR_LEN = 8
-    # gl_project_url = gl_url[: HDR_LEN] + GITLAB_TOKEN + ':' + GITLAB_TOKEN + '@' + gl_url[HDR_LEN :] + '/' + project_name + '.git'
+    # gl_project_url = gl_url[: HDR_LEN] + GITLAB_TOKEN + ':' + GITLAB_TOKEN + '@' + gl_url[HDR_LEN :] + '/' + project_fullname + '.git'
     # print(Git(".").clone(gl_project_url))
 
-    # idf = 'esp-idf'
-    # git = Git(idf)
-    # repo = Repo(idf)
+    # git = Git(project_name)
+    # repo = Repo(project_name)
 
     # #  Set the config parameters: Better be a espressif bot
     # repo.config_writer().set_value('user', 'name', os.environ['GIT_CONFIG_NAME']).release()
@@ -168,7 +167,7 @@ def main():
     # time.sleep(30)
 
     # print('Creating a merge request...')
-    # project_gl = gl.projects.get(project_name)
+    # project_gl = gl.projects.get(project_fullname)
     # mr = project_gl.mergerequests.create({'source_branch': pr_branch, 'target_branch': 'master', 'title': pr_title_desc})
 
     # print('Updating merge request description...')
