@@ -113,10 +113,6 @@ def main():
     pr_body = event["pull_request"]["body"]
     pr_url = event["pull_request"]["html_url"]
 
-    # pr_patch_url = event["pull_request"]["patch_url"]
-    # # Download the patch for the given PR
-    # pr_download_patch(pr_patch_url, project_name)
-
     # Add Gitlab private token and URL as an encrypted secret
     print('Connecting to gitlab...')
     GITLAB_URL = os.environ['GITLAB_URL']
@@ -130,24 +126,22 @@ def main():
     gl_project_url = GITLAB_URL[: HDR_LEN] + GITLAB_TOKEN + ':' + GITLAB_TOKEN + '@' + GITLAB_URL[HDR_LEN :] + '/' + project_fullname + '.git'
     print(Git(".").clone(gl_project_url))
 
-    print(os.system('ls'))
+    pr_patch_url = event["pull_request"]["patch_url"]
+    # Download the patch for the given PR
+    pr_download_patch(pr_patch_url, project_name)
 
-    # pr_patch_url = event["pull_request"]["patch_url"]
-    # # Download the patch for the given PR
-    # pr_download_patch(pr_patch_url, project_name)
+    git = Git(project_name)
+    repo = Repo(project_name)
 
-    # git = Git(project_name)
-    # repo = Repo(project_name)
-
-    # #  Set the config parameters: Better be a espressif bot
-    # repo.config_writer().set_value('user', 'name', os.environ['GIT_CONFIG_NAME']).release()
-    # repo.config_writer().set_value('user', 'email', os.environ['GIT_CONFIG_EMAIL']).release()
+    #  Set the config parameters: Better be a espressif bot
+    repo.config_writer().set_value('user', 'name', os.environ['GIT_CONFIG_NAME']).release()
+    repo.config_writer().set_value('user', 'email', os.environ['GIT_CONFIG_EMAIL']).release()
 
     # # Following is the rebase approach for old PRs
     # # TODO: Enable merging PR without rebase for new commits
 
-    # print('Checking out to master branch...')
-    # print(git.checkout('master'))
+    print('Checking out to master branch...')
+    print(git.checkout('master'))
 
     # print('Pulling the latest changes...')
     # print(git.pull('origin','master'))
