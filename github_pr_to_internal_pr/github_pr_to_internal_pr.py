@@ -86,7 +86,7 @@ def main():
     action = event["action"]
     state = event["review"]["state"]
 
-    if event_name != 'pull_request_review' or state != 'approved':
+    if event_name != 'pull_request_review' or state != 'commented':
         raise SystemError("False Trigger!")
 
     pr_base = event["pull_request"]["base"]["ref"]
@@ -139,8 +139,8 @@ def main():
     repo = Repo(project_name)
 
     #  Set the config parameters: Better be a espressif bot
-    repo.config_writer().set_value('user', 'name', os.environ['GIT_CONFIG_NAME']).release()
-    repo.config_writer().set_value('user', 'email', os.environ['GIT_CONFIG_EMAIL']).release()
+    # repo.config_writer().set_value('user', 'name', os.environ['GIT_CONFIG_NAME']).release()
+    # repo.config_writer().set_value('user', 'email', os.environ['GIT_CONFIG_EMAIL']).release()
 
     # # Following is the rebase approach for old PRs
     # # TODO: Enable merging PR without rebase for new commits
@@ -158,10 +158,10 @@ def main():
     print(git.checkout('HEAD', b=pr_branch))
 
     print('Applying patch...')
-    print(git.execute(['git','am', '--signoff', 'diff.patch']))
+    print(git.execute(['git','am', 'diff.patch']))
 
     commit = repo.head.commit
-    new_cmt_msg = commit.message + '\nCloses ' + pr_html_url
+    new_cmt_msg = commit.message + '\nMerges ' + pr_html_url
 
     print('Amending commit message (Adding additional info about commit)...')
     print(git.execute(['git','commit', '--amend', '-m', new_cmt_msg]))
