@@ -23,17 +23,19 @@ import gitlab
 import requests
 from git import Git, Repo
 
-def pr_download_patch(pr_patch_url):
+def pr_download_patch(pr_patch_url, project_name):
     print('Downloading patch for PR...')
     data = requests.get(pr_patch_url)
-    
-    f = open('esp-idf/diff.patch', 'wb')
+
+    file_path = project_name + '/diff.patch'
+    f = open(file_path, 'wb')
     f.write(data.content)
     f.close()
 
 
 def pr_check_forbidden_files(pr_files_url):
-    # TODO: Requires Github Access Token, with Push Access
+    print("Checking if PR modified forbidden files...")
+    # Requires Github Access Token, with Push Access
     GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
 
     r = requests.get(pr_files_url, headers={'Authorization': 'token ' + GITHUB_TOKEN})
@@ -46,7 +48,8 @@ def pr_check_forbidden_files(pr_files_url):
 
 
 def pr_check_approver_access(project_users_url, pr_approver):
-    # TODO: Requires Github Access Token, with Push Access
+    print("Checking if PR approver access level matches criteria...")
+    # Requires Github Access Token, with Push Access
     GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
 
     r = requests.get(project_users_url, headers={'Authorization': 'token ' + GITHUB_TOKEN})
@@ -82,7 +85,8 @@ def main():
     if pr_base != 'master':
         raise SystemError("PR base illegal! Should be the master branch!")
     
-    project_name = event["repository"]["full_name"]
+    project_fullname = event["repository"]["full_name"]
+    project_org, project_name = project_name.split("/")
     project_users_url = event["repository"]["url"] + '/collaborators'
 
     pr_num = event["pull_request"]["number"]
@@ -96,27 +100,27 @@ def main():
     # Checks whether the approver access level is above required; needs Github access token
     pr_check_approver_access(project_users_url, pr_approver)
 
-    # # Getting the PR title
-    # pr_title = event["pull_request"]["title"]
-    # idx = pr_title.find(os.environ['JIRA_PROJECT']) # Finding the JIRA issue tag
-    # pr_title_desc = pr_title[0 : idx - 2] # For space character
-    # pr_jira_issue = pr_title[idx : -1]
+    # Getting the PR title
+    pr_title = event["pull_request"]["title"]
+    idx = pr_title.find(os.environ['JIRA_PROJECT']) # Finding the JIRA issue tag
+    pr_title_desc = pr_title[0 : idx - 2] # For space character
+    pr_jira_issue = pr_title[idx : -1]
 
-    # # Getting the PR body and URL
-    # pr_body = event["pull_request"]["body"]
-    # pr_url = event["pull_request"]["html_url"]
+    # Getting the PR body and URL
+    pr_body = event["pull_request"]["body"]
+    pr_url = event["pull_request"]["html_url"]
 
-    # pr_patch_url = event["pull_request"]["patch_url"]
-    # # Download the patch for the given PR
-    # pr_download_patch(pr_patch_url)
+    pr_patch_url = event["pull_request"]["patch_url"]
+    # Download the patch for the given PR
+    pr_download_patch(pr_patch_url, project_name)
 
-    # # TODO: Add Gitlab private token and URL as an encrypted secret
-    # print('Connecting to gitlab...')
-    # gl_url = os.environ['GITLAB_URL']
-    # GITLAB_TOKEN = os.environ['GITLAB_TOKEN']
+    # Add Gitlab private token and URL as an encrypted secret
+    print('Connecting to gitlab...')
+    gl_url = os.environ['GITLAB_URL']
+    GITLAB_TOKEN = os.environ['GITLAB_TOKEN']
 
-    # gl = gitlab.Gitlab(url=gl_url, private_token=GITLAB_TOKEN)
-    # gl.auth()
+    gl = gitlab.Gitlab(url=gl_url, private_token=GITLAB_TOKEN)
+    gl.auth()
 
     # HDR_LEN = 8
     # gl_project_url = gl_url[: HDR_LEN] + GITLAB_TOKEN + ':' + GITLAB_TOKEN + '@' + gl_url[HDR_LEN :] + '/' + project_name + '.git'
@@ -126,7 +130,7 @@ def main():
     # git = Git(idf)
     # repo = Repo(idf)
 
-    # # TODO: Set the config parameters: Better be a espressif bot
+    # #  Set the config parameters: Better be a espressif bot
     # repo.config_writer().set_value('user', 'name', os.environ['GIT_CONFIG_NAME']).release()
     # repo.config_writer().set_value('user', 'email', os.environ['GIT_CONFIG_EMAIL']).release()
 
