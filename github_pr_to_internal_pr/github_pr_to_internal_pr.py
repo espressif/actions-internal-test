@@ -68,28 +68,24 @@ def main():
         event = json.load(f)
         print(json.dumps(event, indent=4))
 
-    # event_name = os.environ['GITHUB_EVENT_NAME']  # The name of the webhook event that triggered the workflow.
-    # action = event["action"]
-    # state = event["review"]["state"]
+    event_name = os.environ['GITHUB_EVENT_NAME']  # The name of the webhook event that triggered the workflow.
+    action = event["action"]
+    state = event["review"]["state"]
 
-    # if event_name != 'pull_request_review' or state != 'approved':
-    #     raise SystemError("False Trigger!")
+    if event_name != 'pull_request_review' or state != 'commented':
+        raise SystemError("False Trigger!")
 
-    # pr_base = event["pull_request"]["base"]["ref"]
-    # if pr_base != 'master':
-    #     raise SystemError("PR base illegal! Should be the master branch!")
+    pr_base = event["pull_request"]["base"]["ref"]
+    if pr_base != 'master':
+        raise SystemError("PR base illegal! Should be the master branch!")
     
-    # project_name = event["repository"]["full_name"]
-    # pr_num = event["pull_request"]["number"]
-    # pr_branch = 'contrib/esp_idf_github_pr_' + str(pr_num)
-
-    # pr_patch_url = event["pull_request"]["patch_url"]
-    # # Download the patch for the given PR
-    # pr_download_patch(pr_patch_url)
+    project_name = event["repository"]["full_name"]
+    pr_num = event["pull_request"]["number"]
+    pr_branch = 'contrib/github_pr_' + str(pr_num)
     
-    # pr_files_url = event["pull_request"]["url"] + '/files'
-    # # Check whether the PR has modified forbidden files
-    # pr_check_forbidden_files(pr_files_url)
+    pr_files_url = event["pull_request"]["url"] + '/files'
+    # Check whether the PR has modified forbidden files
+    pr_check_forbidden_files(pr_files_url)
 
     # pr_approver = event["review"]["user"]["login"]
     # # Checks whether the approver access level is above required; needs Github access token
@@ -104,6 +100,10 @@ def main():
     # # Getting the PR body and URL
     # pr_body = event["pull_request"]["body"]
     # pr_url = event["pull_request"]["html_url"]
+
+    # pr_patch_url = event["pull_request"]["patch_url"]
+    # # Download the patch for the given PR
+    # pr_download_patch(pr_patch_url)
 
     # # TODO: Add Gitlab private token and URL as an encrypted secret
     # print('Connecting to gitlab...')
