@@ -33,7 +33,10 @@ def pr_download_patch(pr_patch_url):
 
 
 def pr_check_forbidden_files(pr_files_url):
-    r = requests.get(pr_files_url)
+    # TODO: Requires Github Access Token, with Push Access
+    GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
+
+    r = requests.get(pr_files_url, headers={'Authorization': 'token ' + GITHUB_TOKEN})
     r_data = r.json()
     print(r_data)
     
