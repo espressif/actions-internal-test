@@ -28,7 +28,6 @@ def pr_download_patch(pr_patch_url, project_name):
     # TODO: If repo == private, added headers for REST API calls
     # Requires Github Access Token, with Push Access
     GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
-    print(GITHUB_TOKEN)
     data = requests.get(pr_patch_url, headers={'Authorization': 'token ' + GITHUB_TOKEN})
 
     file_path = project_name + '/diff.patch'
@@ -120,8 +119,10 @@ def main():
 
     # Add Gitlab private token and URL as an encrypted secret
     print('Connecting to gitlab...')
+    GITLAB_URL = os.environ['GITLAB_URL']
+    GITLAB_TOKEN = os.environ['GITLAB_TOKEN']
 
-    gl = gitlab.Gitlab(url=os.environ['GITLAB_URL'], private_token=os.environ['GITLAB_TOKEN'])
+    gl = gitlab.Gitlab(url=GITLAB_URL, private_token=GITLAB_TOKEN)
     gl.auth()
 
     # HDR_LEN = 8
