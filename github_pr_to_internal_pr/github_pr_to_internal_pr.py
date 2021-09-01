@@ -121,7 +121,7 @@ def main():
     print('Connecting to gitlab...')
     gl_url = os.environ['GITLAB_URL']
     GITLAB_TOKEN = os.environ['GITLAB_TOKEN']
-
+    print(gl_url)
     gl = gitlab.Gitlab(url=gl_url, private_token=GITLAB_TOKEN)
     gl.auth()
 
