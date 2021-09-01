@@ -26,11 +26,11 @@ from git import Git, Repo
 def pr_download_patch(pr_patch_url, project_name):
     print('Downloading patch for PR...')
     data = requests.get(pr_patch_url)
-
-    file_path = project_name + '/diff.patch'
-    f = open(file_path, 'wb')
-    f.write(data.content)
-    f.close()
+    print(os.getcwd())
+    # file_path = project_name + '/diff.patch'
+    # f = open(file_path, 'wb')
+    # f.write(data.content)
+    # f.close()
 
 
 def pr_check_forbidden_files(pr_files_url):
