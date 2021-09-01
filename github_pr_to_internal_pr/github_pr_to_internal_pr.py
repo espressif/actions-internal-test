@@ -113,17 +113,17 @@ def main():
     pr_body = event["pull_request"]["body"]
     pr_url = event["pull_request"]["html_url"]
 
-    pr_patch_url = event["pull_request"]["patch_url"]
-    # Download the patch for the given PR
-    pr_download_patch(pr_patch_url, project_name)
+    # pr_patch_url = event["pull_request"]["patch_url"]
+    # # Download the patch for the given PR
+    # pr_download_patch(pr_patch_url, project_name)
 
     # Add Gitlab private token and URL as an encrypted secret
-    # print('Connecting to gitlab...')
-    # gl_url = os.environ['GITLAB_URL']
-    # GITLAB_TOKEN = os.environ['GITLAB_TOKEN']
+    print('Connecting to gitlab...')
+    gl_url = os.environ['GITLAB_URL']
+    GITLAB_TOKEN = os.environ['GITLAB_TOKEN']
 
-    # gl = gitlab.Gitlab(url=gl_url, private_token=GITLAB_TOKEN)
-    # gl.auth()
+    gl = gitlab.Gitlab(url=gl_url, private_token=GITLAB_TOKEN)
+    gl.auth()
 
     # HDR_LEN = 8
     # gl_project_url = gl_url[: HDR_LEN] + GITLAB_TOKEN + ':' + GITLAB_TOKEN + '@' + gl_url[HDR_LEN :] + '/' + project_fullname + '.git'
