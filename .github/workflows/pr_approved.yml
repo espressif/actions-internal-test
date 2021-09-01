@@ -7,7 +7,7 @@ jobs:
   sync_prs_to_internal_codebase:
     name: GitHub PR to Internal Codebase Sync
     runs-on: ubuntu-latest
-    if: github.event.review.state == 'commented'
+    if: github.event.review.state == 'approved'
     steps:
       - uses: actions/checkout@master
       - name: GitHub PR to Internal Codebase Sync
