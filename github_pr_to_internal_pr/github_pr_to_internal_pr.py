@@ -25,12 +25,13 @@ from git import Git, Repo
 
 def pr_download_patch(pr_patch_url, project_name):
     print('Downloading patch for PR...')
-    data = requests.get(pr_patch_url)
-    print(os.getcwd())
-    # file_path = project_name + '/diff.patch'
-    # f = open(file_path, 'wb')
-    # f.write(data.content)
-    # f.close()
+    # TODO: If repo == private, added headers for REST API calls
+    data = requests.get(pr_patch_url, headers={'Authorization': 'token ' + GITHUB_TOKEN})
+
+    file_path = project_name + '/diff.patch'
+    f = open(file_path, 'wb')
+    f.write(data.content)
+    f.close()
 
 
 def pr_check_forbidden_files(pr_files_url):
@@ -115,12 +116,12 @@ def main():
     pr_download_patch(pr_patch_url, project_name)
 
     # Add Gitlab private token and URL as an encrypted secret
-    print('Connecting to gitlab...')
-    gl_url = os.environ['GITLAB_URL']
-    GITLAB_TOKEN = os.environ['GITLAB_TOKEN']
+    # print('Connecting to gitlab...')
+    # gl_url = os.environ['GITLAB_URL']
+    # GITLAB_TOKEN = os.environ['GITLAB_TOKEN']
 
-    gl = gitlab.Gitlab(url=gl_url, private_token=GITLAB_TOKEN)
-    gl.auth()
+    # gl = gitlab.Gitlab(url=gl_url, private_token=GITLAB_TOKEN)
+    # gl.auth()
 
     # HDR_LEN = 8
     # gl_project_url = gl_url[: HDR_LEN] + GITLAB_TOKEN + ':' + GITLAB_TOKEN + '@' + gl_url[HDR_LEN :] + '/' + project_fullname + '.git'
