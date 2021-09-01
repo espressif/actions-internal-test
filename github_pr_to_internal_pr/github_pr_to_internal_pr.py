@@ -143,29 +143,29 @@ def main():
     print('Checking out to master branch...')
     print(git.checkout('master'))
 
-    # print('Pulling the latest changes...')
-    # print(git.pull('origin','master'))
+    print('Pulling the latest changes...')
+    print(git.pull('origin','master'))
 
-    # print('Updating submodules...')
-    # print(git.submodule('update', '--init', '--recursive'))
+    print('Updating submodules...')
+    print(git.submodule('update', '--init', '--recursive'))
 
-    # print('Checking out to new branch for contribution...')
-    # print(git.checkout('HEAD', b=pr_branch))
+    print('Checking out to new branch for contribution...')
+    print(git.checkout('HEAD', b=pr_branch))
 
-    # print('Applying patch...')
-    # print(git.execute(['git','am', '--signoff', 'diff.patch']))
+    print('Applying patch...')
+    print(git.execute(['git','am', '--signoff', 'diff.patch']))
 
-    # commit = repo.head.commit
-    # new_cmt_msg = commit.message + '\nCloses ' + pr_url
+    commit = repo.head.commit
+    new_cmt_msg = commit.message + '\nCloses ' + pr_url
 
-    # print('Amending commit message (Adding additional info about commit)...')
-    # print(git.execute(['git','commit', '--amend', '-m', new_cmt_msg]))
+    print('Amending commit message (Adding additional info about commit)...')
+    print(git.execute(['git','commit', '--amend', '-m', new_cmt_msg]))
 
-    # print('Pushing to remote...')
-    # print(git.push('--set-upstream', 'origin', pr_branch))
+    print('Pushing to remote...')
+    print(git.push('--set-upstream', 'origin', pr_branch))
 
-    # # Deleting local repo
-    # shutil.rmtree(idf)
+    # Deleting local repo
+    shutil.rmtree(project_name)
 
     # # NOTE: Remote takes some time to register a branch
     # time.sleep(30)
