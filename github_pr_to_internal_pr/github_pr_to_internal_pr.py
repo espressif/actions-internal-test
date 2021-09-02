@@ -161,8 +161,6 @@ def main():
 
     print('Checking out the PR branch...')
     print(git.checkout('FETCH_HEAD', b=pr_branch))
-
-    os.system('ls -l')
      
     # # Merge PRs with Rebase approach (for old PRs)
     # print('Checking out to master branch...')
@@ -186,28 +184,28 @@ def main():
     # print('Amending commit message (Adding additional info about commit)...')
     # print(git.execute(['git','commit', '--amend', '-m', new_cmt_msg]))
 
-    # print('Pushing to remote...')
-    # print(git.push('--set-upstream', 'origin', pr_branch))
+    print('Pushing to remote...')
+    print(git.push('--set-upstream', 'origin', pr_branch))
 
     # Deleting local repo
     shutil.rmtree(project_name)
 
-    # # NOTE: Remote takes some time to register a branch
-    # time.sleep(15)
+    # NOTE: Remote takes some time to register a branch
+    time.sleep(15)
 
-    # print('Creating a merge request...')
-    # project_gl = gl.projects.get(project_fullname)
-    # mr = project_gl.mergerequests.create({'source_branch': pr_branch, 'target_branch': 'master', 'title': pr_title_desc})
+    print('Creating a merge request...')
+    project_gl = gl.projects.get(project_fullname)
+    mr = project_gl.mergerequests.create({'source_branch': pr_branch, 'target_branch': 'master', 'title': pr_title_desc})
 
-    # print('Updating merge request description...')
-    # mr_desc = pr_body + '\n(Add more info here)' + '\n## Related'
-    # mr_desc +=  '\n* Closes ' + pr_jira_issue
-    # mr_desc += '\n## Release notes (Mandatory)\n ### To-be-added'
+    print('Updating merge request description...')
+    mr_desc = pr_body + '\n(Add more info here)' + '\n## Related'
+    mr_desc +=  '\n* Closes ' + pr_jira_issue
+    mr_desc += '\n## Release notes (Mandatory)\n ### To-be-added'
 
-    # mr.description = mr_desc
-    # mr.save()
+    mr.description = mr_desc
+    mr.save()
 
-    # print('Done with the merge request!')
+    print('Done with the merge request!')
 
 
 if __name__ == '__main__':
