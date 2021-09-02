@@ -80,14 +80,14 @@ def main():
     # The path of the file with the complete webhook event payload. For example, /github/workflow/event.json.
     with open(os.environ['GITHUB_EVENT_PATH'], 'r') as f:
         event = json.load(f)
-        print(json.dumps(event, indent=4))
+        # print(json.dumps(event, indent=4))
 
-    # event_name = os.environ['GITHUB_EVENT_NAME']  # The name of the webhook event that triggered the workflow.
-    # action = event["action"]
-    # state = event["review"]["state"]
+    event_name = os.environ['GITHUB_EVENT_NAME']  # The name of the webhook event that triggered the workflow.
+    action = event["action"]
+    state = event["review"]["state"]
 
-    # if event_name != 'pull_request_review' or state != 'commented':
-    #     raise SystemError("False Trigger!")
+    if event_name != 'pull_request_review' or state != 'approved':
+        raise SystemError("False Trigger!")
 
     # pr_base = event["pull_request"]["base"]["ref"]
     # if pr_base != 'master':
@@ -118,9 +118,13 @@ def main():
     # # Getting the PR body and URL
     # pr_body = event["pull_request"]["body"]
 
-    # if '#rebase' in pr_body:
-    #     print('boo yah')
-    
+    if "/rebase" in  event["review"]["body"]:
+        print('oooooooooh')
+        print('oooooooooh')
+        print('oooooooooh')
+        print('oooooooooh')
+        print('oooooooooh')
+
     # pr_html_url = event["pull_request"]["html_url"]
 
     # # Add Gitlab private token and URL as an encrypted secret
