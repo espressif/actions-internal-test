@@ -123,6 +123,8 @@ def main():
     print('Connecting to gitlab...')
     GITLAB_URL = os.environ['GITLAB_URL']
     GITLAB_TOKEN = os.environ['GITLAB_TOKEN']
+    
+    # NOTE: Modified for testing purpose
     project_fullname = 'app-frameworks/actions-internal-test'
 
     gl = gitlab.Gitlab(url=GITLAB_URL, private_token=GITLAB_TOKEN)
@@ -142,52 +144,68 @@ def main():
     repo.config_writer().set_value('user', 'name', os.environ['GIT_CONFIG_NAME']).release()
     repo.config_writer().set_value('user', 'email', os.environ['GIT_CONFIG_EMAIL']).release()
 
-    # # Following is the rebase approach for old PRs
-    # # TODO: Enable merging PR without rebase for new commits
+    GITHUB_REMOTE_NAME = 'github'
+    GITHUB_REMOTE_URL = 'https://github.com/espressif/actions-internal-test'
 
+    # Merge PRs without Rebase (for new PRs)
     print('Checking out to master branch...')
     print(git.checkout('master'))
 
-    print('Pulling the latest changes...')
-    print(git.pull('origin','master'))
+    print('Adding the Github remote...')
+    print(git.remote('add', GITHUB_REMOTE_NAME, GITHUB_REMOTE-URL))
 
-    print('Updating submodules...')
-    print(git.submodule('update', '--init', '--recursive'))
+    print('Fetching the PR branch...')
+    print(git.fetch(GITHUB_REMOTE_NAME, 'pull/' + str(pr_num) + '/head'))
 
-    print('Checking out to new branch for contribution...')
-    print(git.checkout('HEAD', b=pr_branch))
+    print('Checking out the PR branch...')
+    print(git.checkout('FETCH_HEAD', b=pr_branch))
 
-    print('Applying patch...')
-    print(git.execute(['git','am', 'diff.patch']))
+    os.system('ls -l')
+     
+    # # Merge PRs with Rebase approach (for old PRs)
+    # print('Checking out to master branch...')
+    # print(git.checkout('master'))
 
-    commit = repo.head.commit
-    new_cmt_msg = commit.message + '\nMerges ' + pr_html_url
+    # print('Pulling the latest changes...')
+    # print(git.pull('origin','master'))
 
-    print('Amending commit message (Adding additional info about commit)...')
-    print(git.execute(['git','commit', '--amend', '-m', new_cmt_msg]))
+    # print('Updating submodules...')
+    # print(git.submodule('update', '--init', '--recursive'))
 
-    print('Pushing to remote...')
-    print(git.push('--set-upstream', 'origin', pr_branch))
+    # print('Checking out to new branch for contribution...')
+    # print(git.checkout('HEAD', b=pr_branch))
+
+    # print('Applying patch...')
+    # print(git.execute(['git','am', 'diff.patch']))
+
+    # commit = repo.head.commit
+    # new_cmt_msg = commit.message + '\nMerges ' + pr_html_url
+
+    # print('Amending commit message (Adding additional info about commit)...')
+    # print(git.execute(['git','commit', '--amend', '-m', new_cmt_msg]))
+
+    # print('Pushing to remote...')
+    # print(git.push('--set-upstream', 'origin', pr_branch))
 
     # Deleting local repo
     shutil.rmtree(project_name)
 
-    # NOTE: Remote takes some time to register a branch
-    time.sleep(15)
+    # # NOTE: Remote takes some time to register a branch
+    # time.sleep(15)
 
-    print('Creating a merge request...')
-    project_gl = gl.projects.get(project_fullname)
-    mr = project_gl.mergerequests.create({'source_branch': pr_branch, 'target_branch': 'master', 'title': pr_title_desc})
+    # print('Creating a merge request...')
+    # project_gl = gl.projects.get(project_fullname)
+    # mr = project_gl.mergerequests.create({'source_branch': pr_branch, 'target_branch': 'master', 'title': pr_title_desc})
 
-    print('Updating merge request description...')
-    mr_desc = pr_body + '\n(Add more info here)' + '\n## Related'
-    mr_desc +=  '\n* Closes ' + pr_jira_issue
-    mr_desc += '\n## Release notes (Mandatory)\n ### To-be-added'
+    # print('Updating merge request description...')
+    # mr_desc = pr_body + '\n(Add more info here)' + '\n## Related'
+    # mr_desc +=  '\n* Closes ' + pr_jira_issue
+    # mr_desc += '\n## Release notes (Mandatory)\n ### To-be-added'
 
-    mr.description = mr_desc
-    mr.save()
+    # mr.description = mr_desc
+    # mr.save()
 
-    print('Done with the merge request!')
+    # print('Done with the merge request!')
 
 
 if __name__ == '__main__':
