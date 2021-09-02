@@ -119,11 +119,7 @@ def main():
     # pr_body = event["pull_request"]["body"]
 
     if "/rebase" in  event["review"]["body"]:
-        print('oooooooooh')
-        print('oooooooooh')
-        print('oooooooooh')
-        print('oooooooooh')
-        print('oooooooooh')
+        return
 
     # pr_html_url = event["pull_request"]["html_url"]
 
