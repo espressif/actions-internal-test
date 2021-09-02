@@ -146,13 +146,15 @@ def main():
 
     GITHUB_REMOTE_NAME = 'github'
     GITHUB_REMOTE_URL = 'https://github.com/espressif/actions-internal-test'
+    GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
+    gh_remote = GITHUB_REMOTE_URL[: HDR_LEN] + GITHUB_TOKEN + ':' + GITHUB_TOKEN + '@' + GITHUB_REMOTE_URL[HDR_LEN :] + '.git'
 
     # Merge PRs without Rebase (for new PRs)
     print('Checking out to master branch...')
     print(git.checkout('master'))
 
     print('Adding the Github remote...')
-    print(git.remote('add', GITHUB_REMOTE_NAME, GITHUB_REMOTE_URL))
+    print(git.remote('add', GITHUB_REMOTE_NAME, gh_remote))
 
     print('Fetching the PR branch...')
     print(git.fetch(GITHUB_REMOTE_NAME, 'pull/' + str(pr_num) + '/head'))
