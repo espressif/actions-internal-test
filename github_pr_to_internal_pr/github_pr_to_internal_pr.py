@@ -152,7 +152,7 @@ def main():
     print(git.checkout('master'))
 
     print('Adding the Github remote...')
-    print(git.remote('add', GITHUB_REMOTE_NAME, GITHUB_REMOTE-URL))
+    print(git.remote('add', GITHUB_REMOTE_NAME, GITHUB_REMOTE_URL))
 
     print('Fetching the PR branch...')
     print(git.fetch(GITHUB_REMOTE_NAME, 'pull/' + str(pr_num) + '/head'))
