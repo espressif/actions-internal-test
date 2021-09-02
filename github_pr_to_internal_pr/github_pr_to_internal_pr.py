@@ -80,48 +80,48 @@ def main():
     # The path of the file with the complete webhook event payload. For example, /github/workflow/event.json.
     with open(os.environ['GITHUB_EVENT_PATH'], 'r') as f:
         event = json.load(f)
-        # print(json.dumps(event, indent=4))
+        print(json.dumps(event, indent=4))
 
-    event_name = os.environ['GITHUB_EVENT_NAME']  # The name of the webhook event that triggered the workflow.
-    action = event["action"]
-    state = event["review"]["state"]
+    # event_name = os.environ['GITHUB_EVENT_NAME']  # The name of the webhook event that triggered the workflow.
+    # action = event["action"]
+    # state = event["review"]["state"]
 
-    if event_name != 'pull_request_review' or state != 'commented':
-        raise SystemError("False Trigger!")
+    # if event_name != 'pull_request_review' or state != 'commented':
+    #     raise SystemError("False Trigger!")
 
-    pr_base = event["pull_request"]["base"]["ref"]
-    if pr_base != 'master':
-        raise SystemError("PR base illegal! Should be the master branch!")
+    # pr_base = event["pull_request"]["base"]["ref"]
+    # if pr_base != 'master':
+    #     raise SystemError("PR base illegal! Should be the master branch!")
     
-    project_fullname = event["repository"]["full_name"]
-    project_org, project_name = project_fullname.split("/")
-    project_users_url = event["repository"]["url"] + '/collaborators'
+    # project_fullname = event["repository"]["full_name"]
+    # project_org, project_name = project_fullname.split("/")
+    # project_users_url = event["repository"]["url"] + '/collaborators'
 
-    pr_num = event["pull_request"]["number"]
-    pr_branch = 'contrib/github_pr_' + str(pr_num)
-    pr_rest_url = event["pull_request"]["url"]
+    # pr_num = event["pull_request"]["number"]
+    # pr_branch = 'contrib/github_pr_' + str(pr_num)
+    # pr_rest_url = event["pull_request"]["url"]
 
-    pr_files_url = pr_rest_url + '/files'
-    # Check whether the PR has modified forbidden files
-    pr_check_forbidden_files(pr_files_url)
+    # pr_files_url = pr_rest_url + '/files'
+    # # Check whether the PR has modified forbidden files
+    # pr_check_forbidden_files(pr_files_url)
 
-    pr_approver = event["review"]["user"]["login"]
-    # Checks whether the approver access level is above required; needs Github access token
-    pr_check_approver_access(project_users_url, pr_approver)
+    # pr_approver = event["review"]["user"]["login"]
+    # # Checks whether the approver access level is above required; needs Github access token
+    # pr_check_approver_access(project_users_url, pr_approver)
 
-    # Getting the PR title
-    pr_title = event["pull_request"]["title"]
-    idx = pr_title.find(os.environ['JIRA_PROJECT']) # Finding the JIRA issue tag
-    pr_title_desc = pr_title[0 : idx - 2] # For space character
-    pr_jira_issue = pr_title[idx : -1]
+    # # Getting the PR title
+    # pr_title = event["pull_request"]["title"]
+    # idx = pr_title.find(os.environ['JIRA_PROJECT']) # Finding the JIRA issue tag
+    # pr_title_desc = pr_title[0 : idx - 2] # For space character
+    # pr_jira_issue = pr_title[idx : -1]
 
-    # Getting the PR body and URL
-    pr_body = event["pull_request"]["body"]
+    # # Getting the PR body and URL
+    # pr_body = event["pull_request"]["body"]
 
-    if '#rebase' in pr_body:
-        print('boo yah')
+    # if '#rebase' in pr_body:
+    #     print('boo yah')
     
-    pr_html_url = event["pull_request"]["html_url"]
+    # pr_html_url = event["pull_request"]["html_url"]
 
     # # Add Gitlab private token and URL as an encrypted secret
     # print('Connecting to gitlab...')
