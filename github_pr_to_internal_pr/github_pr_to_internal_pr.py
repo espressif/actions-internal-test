@@ -119,8 +119,12 @@ def main():
     # pr_body = event["pull_request"]["body"]
 
     if "/rebase" in  event["review"]["body"]:
-        return
-
+        print('/rebase')
+    elif "/merge" in  event["review"]["body"]:
+        print('/merge')
+    else:
+        print('go, create a pr yourself')
+        
     # pr_html_url = event["pull_request"]["html_url"]
 
     # # Add Gitlab private token and URL as an encrypted secret
