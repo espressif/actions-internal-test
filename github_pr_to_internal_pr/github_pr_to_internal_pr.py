@@ -59,7 +59,10 @@ def pr_check_approver_access(project_users_url, pr_approver):
     print("Checking if PR approver access level matches criteria...")
     # Requires Github Access Token, with Push Access
     GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
-    print(project_users_url)
+
+    # NOTE: General form is: https://api.github.com/repos/org/repo/collaborators{/collaborator}, hence stripping the end
+    project_users_url = project_users_url.split('{/')[0]
+
     r = requests.get(project_users_url, headers={'Authorization': 'token ' + GITHUB_TOKEN})
     r_data = r.json()
     print(r_data)
@@ -92,9 +95,7 @@ def sync_pr_with_merge(project_name, pr_num, pr_branch, project_html_url):
     git = Git(project_name)
     
     GITHUB_REMOTE_NAME = 'github'
-
-    # NOTE: General form is: https://api.github.com/repos/org/repo/collaborators{/collaborator}, hence stripping the end
-    GITHUB_REMOTE_URL = project_html_url.split('{/')
+    GITHUB_REMOTE_URL = project_html_url
 
     HDR_LEN = 8
     GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
@@ -197,25 +198,25 @@ def main():
     # Checks whether the approver access level is above required; needs Github access token
     pr_check_approver_access(project_users_url, pr_approver)
 
-    # # Getting the PR title
-    # pr_title = event["pull_request"]["title"]
-    # idx = pr_title.find(os.environ['JIRA_PROJECT']) # Finding the JIRA issue tag
-    # pr_title_desc = pr_title[0 : idx - 2] # For space character
-    # pr_jira_issue = pr_title[idx : -1]
+    # Getting the PR title
+    pr_title = event["pull_request"]["title"]
+    idx = pr_title.find(os.environ['JIRA_PROJECT']) # Finding the JIRA issue tag
+    pr_title_desc = pr_title[0 : idx - 2] # For space character
+    pr_jira_issue = pr_title[idx : -1]
 
-    # # Gitlab setup and cloning internal codebase
-    # gl = setup_project(project_fullname)
+    # Gitlab setup and cloning internal codebase
+    gl = setup_project(project_fullname)
 
-    # if "/rebase" in review_body:
-    #     sync_pr_with_rebase(project_name, pr_branch, pr_html_url, pr_rest_url)
-    # elif "/merge" in review_body:
-    #     sync_pr_with_merge(project_name, pr_num, pr_branch, project_html_url)
-    # else:
-    #     print('No action selected!!!')
-    #     return
+    if "/rebase" in review_body:
+        sync_pr_with_rebase(project_name, pr_branch, pr_html_url, pr_rest_url)
+    elif "/merge" in review_body:
+        sync_pr_with_merge(project_name, pr_num, pr_branch, project_html_url)
+    else:
+        print('No action selected!!!')
+        return
 
-    # # Deleting local repo
-    # shutil.rmtree(project_name)
+    # Deleting local repo
+    shutil.rmtree(project_name)
 
     # # NOTE: Remote takes some time to register a branch
     # time.sleep(15)
