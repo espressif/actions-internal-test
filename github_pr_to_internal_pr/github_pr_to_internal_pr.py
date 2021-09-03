@@ -199,6 +199,7 @@ def main():
     idx = pr_title.find(os.environ['JIRA_PROJECT']) # Finding the JIRA issue tag
     pr_title_desc = pr_title[0 : idx - 2] # For space character
     pr_jira_issue = pr_title[idx : -1]
+    pr_body = eevent["pull_request"]["body"]
 
     # NOTE: Modified for testing purpose
     project_fullname = 'app-frameworks/actions-internal-test'
