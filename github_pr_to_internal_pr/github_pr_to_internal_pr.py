@@ -62,6 +62,7 @@ def pr_check_approver_access(project_users_url, pr_approver):
 
     r = requests.get(project_users_url, headers={'Authorization': 'token ' + GITHUB_TOKEN})
     r_data = r.json()
+    print(r_data)
 
     pr_appr_perm = [usr for usr in r_data if usr['login'] == pr_approver][0]['permissions']
     if not pr_appr_perm['triage']:
@@ -87,11 +88,11 @@ def setup_project(project_fullname):
 
 
 # Merge PRs without Rebase (for new PRs)
-def sync_pr_with_merge(project_name, pr_num, pr_branch, pr_html_url):
+def sync_pr_with_merge(project_name, pr_num, pr_branch, project_html_url):
     git = Git(project_name)
     
     GITHUB_REMOTE_NAME = 'github'
-    GITHUB_REMOTE_URL = pr_html_url + '.git'
+    GITHUB_REMOTE_URL = project_html_url
 
     HDR_LEN = 8
     GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
@@ -178,7 +179,8 @@ def main():
     
     project_fullname = event["repository"]["full_name"]
     project_org, project_name = project_fullname.split("/")
-    project_users_url = event["repository"]["url"] + '/collaborators'
+    project_users_url = event["repository"]["collaborators_url"]
+    project_html_url = event["repository"]["clone_url"]
 
     pr_num = event["pull_request"]["number"]
     pr_branch = 'contrib/github_pr_' + str(pr_num)
@@ -205,7 +207,7 @@ def main():
     if "/rebase" in review_body:
         sync_pr_with_rebase(project_name, pr_branch, pr_html_url, pr_rest_url)
     elif "/merge" in review_body:
-        sync_pr_with_merge(project_name, pr_num, pr_branch, pr_html_url)
+        sync_pr_with_merge(project_name, pr_num, pr_branch, project_html_url)
     else:
         print('No action selected!!!')
         return
