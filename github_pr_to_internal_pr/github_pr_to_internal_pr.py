@@ -65,7 +65,6 @@ def pr_check_approver_access(project_users_url, pr_approver):
 
     r = requests.get(project_users_url, headers={'Authorization': 'token ' + GITHUB_TOKEN})
     r_data = r.json()
-    print(r_data)
 
     pr_appr_perm = [usr for usr in r_data if usr['login'] == pr_approver][0]['permissions']
     if not pr_appr_perm['triage']:
@@ -99,7 +98,7 @@ def sync_pr_with_merge(project_name, pr_num, pr_branch, project_html_url):
 
     HDR_LEN = 8
     GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
-    gh_remote = GITHUB_REMOTE_URL[: HDR_LEN] + GITHUB_TOKEN + ':' + GITHUB_TOKEN + '@' + GITHUB_REMOTE_URL[HDR_LEN :] + '.git'
+    gh_remote = GITHUB_REMOTE_URL[: HDR_LEN] + GITHUB_TOKEN + ':' + GITHUB_TOKEN + '@' + GITHUB_REMOTE_URL[HDR_LEN :]
     
     print('Checking out to master branch...')
     print(git.checkout('master'))
