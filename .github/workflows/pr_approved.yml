@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@master
       - name: GitHub PR to Internal Codebase Sync
-        uses: espressif/github-actions/github_pr_to_internal_pr@master
+        uses: espressif/actions-internal-test/github_pr_to_internal_pr@feature/gh_pr_to_gl_mr
         env:
           GITLAB_URL: ${{ secrets.GITLAB_URL }}
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
