@@ -25,7 +25,7 @@ from git import Git, Repo
 
 def pr_download_patch(pr_rest_url, project_name):
     print('Downloading patch for PR...')
-    # TODO: If repo == private, added headers for REST API calls
+    # TODO: If repo == private, add authorization headers for REST API calls
     # Requires Github Access Token, with Push Access
     GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
     
@@ -68,6 +68,88 @@ def pr_check_approver_access(project_users_url, pr_approver):
         raise SystemError("PR Approver Access is below TRIAGE level!")
 
 
+def setup_project(project_fullname):
+    print('Connecting to gitlab...')
+    GITLAB_URL = os.environ['GITLAB_URL']
+    GITLAB_TOKEN = os.environ['GITLAB_TOKEN']
+
+    gl = gitlab.Gitlab(url=GITLAB_URL, private_token=GITLAB_TOKEN)
+    gl.auth()
+
+    # NOTE: Modified for testing purpose
+    project_fullname = 'app-frameworks/actions-internal-test'
+
+    HDR_LEN = 8
+    gl_project_url = GITLAB_URL[: HDR_LEN] + GITLAB_TOKEN + ':' + GITLAB_TOKEN + '@' + GITLAB_URL[HDR_LEN :] + '/' + project_fullname + '.git'
+    
+    print(Git(".").clone(gl_project_url))
+    return gl
+
+
+# Merge PRs without Rebase (for new PRs)
+def sync_pr_with_merge(project_name, pr_num, pr_branch, pr_html_url):
+    git = Git(project_name)
+    
+    GITHUB_REMOTE_NAME = 'github'
+    GITHUB_REMOTE_URL = pr_html_url + '.git'
+
+    HDR_LEN = 8
+    GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
+    gh_remote = GITHUB_REMOTE_URL[: HDR_LEN] + GITHUB_TOKEN + ':' + GITHUB_TOKEN + '@' + GITHUB_REMOTE_URL[HDR_LEN :] + '.git'
+    
+    print('Checking out to master branch...')
+    print(git.checkout('master'))
+
+    print('Adding the Github remote...')
+    print(git.remote('add', GITHUB_REMOTE_NAME, gh_remote))
+
+    print('Fetching the PR branch...')
+    print(git.fetch(GITHUB_REMOTE_NAME, 'pull/' + str(pr_num) + '/head'))
+
+    print('Checking out the PR branch...')
+    print(git.checkout('FETCH_HEAD', b=pr_branch))
+
+    print('Pushing to remote...')
+    print(git.push('--set-upstream', 'origin', pr_branch))
+
+
+# Merge PRs with Rebase approach (for old PRs)
+def sync_pr_with_rebase(project_name, pr_branch, pr_html_url, pr_rest_url):
+    git = Git(project_name)
+    repo = Repo(project_name)
+
+    #  Set the config parameters: Better be a espressif bot
+    repo.config_writer().set_value('user', 'name', os.environ['GIT_CONFIG_NAME']).release()
+    repo.config_writer().set_value('user', 'email', os.environ['GIT_CONFIG_EMAIL']).release()
+
+    # Download the patch for the given PR
+    pr_download_patch(pr_rest_url, project_name)
+
+    print('Checking out to master branch...')
+    print(git.checkout('master'))
+
+    print('Pulling the latest changes...')
+    print(git.pull('origin','master'))
+
+    print('Updating submodules...')
+    print(git.submodule('update', '--init', '--recursive'))
+
+    print('Checking out to new branch for contribution...')
+    print(git.checkout('HEAD', b=pr_branch))
+
+    print('Applying patch...')
+    print(git.execute(['git','am', 'diff.patch']))
+
+    commit = repo.head.commit
+    new_cmt_msg = commit.message + '\nMerges ' + pr_html_url
+
+    print('Amending commit message (Adding additional info about commit)...')
+    print(git.execute(['git','commit', '--amend', '-m', new_cmt_msg]))
+
+    print('Pushing to remote...')
+    print(git.push('--set-upstream', 'origin', pr_branch))
+
+
 def main():
     if 'GITHUB_REPOSITORY' not in os.environ:
         print('Not running in GitHub action context, nothing to do')
@@ -85,121 +167,54 @@ def main():
     event_name = os.environ['GITHUB_EVENT_NAME']  # The name of the webhook event that triggered the workflow.
     action = event["action"]
     state = event["review"]["state"]
+    review_body = event["review"]["body"]
 
     if event_name != 'pull_request_review' or state != 'approved':
         raise SystemError("False Trigger!")
 
-    # pr_base = event["pull_request"]["base"]["ref"]
-    # if pr_base != 'master':
-    #     raise SystemError("PR base illegal! Should be the master branch!")
+    pr_base = event["pull_request"]["base"]["ref"]
+    if pr_base != 'master':
+        raise SystemError("PR base illegal! Should be the master branch!")
     
-    # project_fullname = event["repository"]["full_name"]
-    # project_org, project_name = project_fullname.split("/")
-    # project_users_url = event["repository"]["url"] + '/collaborators'
+    project_fullname = event["repository"]["full_name"]
+    project_org, project_name = project_fullname.split("/")
+    project_users_url = event["repository"]["url"] + '/collaborators'
 
-    # pr_num = event["pull_request"]["number"]
-    # pr_branch = 'contrib/github_pr_' + str(pr_num)
-    # pr_rest_url = event["pull_request"]["url"]
+    pr_num = event["pull_request"]["number"]
+    pr_branch = 'contrib/github_pr_' + str(pr_num)
+    pr_rest_url = event["pull_request"]["url"]
+    pr_html_url = event["pull_request"]["html_url"]
 
-    # pr_files_url = pr_rest_url + '/files'
-    # # Check whether the PR has modified forbidden files
-    # pr_check_forbidden_files(pr_files_url)
+    pr_files_url = pr_rest_url + '/files'
+    # Check whether the PR has modified forbidden files
+    pr_check_forbidden_files(pr_files_url)
 
-    # pr_approver = event["review"]["user"]["login"]
-    # # Checks whether the approver access level is above required; needs Github access token
-    # pr_check_approver_access(project_users_url, pr_approver)
+    pr_approver = event["review"]["user"]["login"]
+    # Checks whether the approver access level is above required; needs Github access token
+    pr_check_approver_access(project_users_url, pr_approver)
 
-    # # Getting the PR title
-    # pr_title = event["pull_request"]["title"]
-    # idx = pr_title.find(os.environ['JIRA_PROJECT']) # Finding the JIRA issue tag
-    # pr_title_desc = pr_title[0 : idx - 2] # For space character
-    # pr_jira_issue = pr_title[idx : -1]
+    # Getting the PR title
+    pr_title = event["pull_request"]["title"]
+    idx = pr_title.find(os.environ['JIRA_PROJECT']) # Finding the JIRA issue tag
+    pr_title_desc = pr_title[0 : idx - 2] # For space character
+    pr_jira_issue = pr_title[idx : -1]
 
-    # # Getting the PR body and URL
-    # pr_body = event["pull_request"]["body"]
+    # Gitlab setup and cloning internal codebase
+    gl = setup_project(project_fullname)
 
-    if "/rebase" in  event["review"]["body"]:
-        print('/rebase')
-    elif "/merge" in  event["review"]["body"]:
-        print('/merge')
+    if "/rebase" in review_body:
+        sync_pr_with_rebase(project_name, pr_branch, pr_html_url, pr_rest_url)
+    elif "/merge" in review_body:
+        sync_pr_with_merge(project_name, pr_num, pr_branch, pr_html_url)
     else:
-        print('go, create a pr yourself')
-        
-    # pr_html_url = event["pull_request"]["html_url"]
+        print('No action selected!!!')
+        return
 
-    # # Add Gitlab private token and URL as an encrypted secret
-    # print('Connecting to gitlab...')
-    # GITLAB_URL = os.environ['GITLAB_URL']
-    # GITLAB_TOKEN = os.environ['GITLAB_TOKEN']
-    
-    # # NOTE: Modified for testing purpose
-    # project_fullname = 'app-frameworks/actions-internal-test'
+    # Deleting local repo
+    shutil.rmtree(project_name)
 
-    # gl = gitlab.Gitlab(url=GITLAB_URL, private_token=GITLAB_TOKEN)
-    # gl.auth()
-
-    # HDR_LEN = 8
-    # gl_project_url = GITLAB_URL[: HDR_LEN] + GITLAB_TOKEN + ':' + GITLAB_TOKEN + '@' + GITLAB_URL[HDR_LEN :] + '/' + project_fullname + '.git'
-    # print(Git(".").clone(gl_project_url))
-
-    # # Download the patch for the given PR
-    # pr_download_patch(pr_rest_url, project_name)
-
-    # git = Git(project_name)
-    # repo = Repo(project_name)
-
-    # #  Set the config parameters: Better be a espressif bot
-    # repo.config_writer().set_value('user', 'name', os.environ['GIT_CONFIG_NAME']).release()
-    # repo.config_writer().set_value('user', 'email', os.environ['GIT_CONFIG_EMAIL']).release()
-
-    # GITHUB_REMOTE_NAME = 'github'
-    # GITHUB_REMOTE_URL = 'https://github.com/espressif/actions-internal-test'
-    # GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
-    # gh_remote = GITHUB_REMOTE_URL[: HDR_LEN] + GITHUB_TOKEN + ':' + GITHUB_TOKEN + '@' + GITHUB_REMOTE_URL[HDR_LEN :] + '.git'
-
-    # # Merge PRs without Rebase (for new PRs)
-    # print('Checking out to master branch...')
-    # print(git.checkout('master'))
-
-    # print('Adding the Github remote...')
-    # print(git.remote('add', GITHUB_REMOTE_NAME, gh_remote))
-
-    # print('Fetching the PR branch...')
-    # print(git.fetch(GITHUB_REMOTE_NAME, 'pull/' + str(pr_num) + '/head'))
-
-    # print('Checking out the PR branch...')
-    # print(git.checkout('FETCH_HEAD', b=pr_branch))
-     
-    # # # Merge PRs with Rebase approach (for old PRs)
-    # # print('Checking out to master branch...')
-    # # print(git.checkout('master'))
-
-    # # print('Pulling the latest changes...')
-    # # print(git.pull('origin','master'))
-
-    # # print('Updating submodules...')
-    # # print(git.submodule('update', '--init', '--recursive'))
-
-    # # print('Checking out to new branch for contribution...')
-    # # print(git.checkout('HEAD', b=pr_branch))
-
-    # # print('Applying patch...')
-    # # print(git.execute(['git','am', 'diff.patch']))
-
-    # # commit = repo.head.commit
-    # # new_cmt_msg = commit.message + '\nMerges ' + pr_html_url
-
-    # # print('Amending commit message (Adding additional info about commit)...')
-    # # print(git.execute(['git','commit', '--amend', '-m', new_cmt_msg]))
-
-    # print('Pushing to remote...')
-    # print(git.push('--set-upstream', 'origin', pr_branch))
-
-    # # Deleting local repo
-    # shutil.rmtree(project_name)
-
-    # # NOTE: Remote takes some time to register a branch
-    # time.sleep(15)
+    # NOTE: Remote takes some time to register a branch
+    time.sleep(15)
 
     # print('Creating a merge request...')
     # project_gl = gl.projects.get(project_fullname)
@@ -213,7 +228,7 @@ def main():
     # mr.description = mr_desc
     # mr.save()
 
-    # print('Done with the merge request!')
+    print('Done with the merge request!')
 
 
 if __name__ == '__main__':
