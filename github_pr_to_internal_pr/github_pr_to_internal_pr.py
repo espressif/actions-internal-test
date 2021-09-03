@@ -79,9 +79,6 @@ def setup_project(project_fullname):
     gl = gitlab.Gitlab(url=GITLAB_URL, private_token=GITLAB_TOKEN)
     gl.auth()
 
-    # NOTE: Modified for testing purpose
-    project_fullname = 'app-frameworks/actions-internal-test'
-
     HDR_LEN = 8
     gl_project_url = GITLAB_URL[: HDR_LEN] + GITLAB_TOKEN + ':' + GITLAB_TOKEN + '@' + GITLAB_URL[HDR_LEN :] + '/' + project_fullname + '.git'
     
@@ -202,6 +199,9 @@ def main():
     idx = pr_title.find(os.environ['JIRA_PROJECT']) # Finding the JIRA issue tag
     pr_title_desc = pr_title[0 : idx - 2] # For space character
     pr_jira_issue = pr_title[idx : -1]
+
+    # NOTE: Modified for testing purpose
+    project_fullname = 'app-frameworks/actions-internal-test'
 
     # Gitlab setup and cloning internal codebase
     gl = setup_project(project_fullname)
