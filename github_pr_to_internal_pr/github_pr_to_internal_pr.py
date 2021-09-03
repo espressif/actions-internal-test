@@ -92,7 +92,9 @@ def sync_pr_with_merge(project_name, pr_num, pr_branch, project_html_url):
     git = Git(project_name)
     
     GITHUB_REMOTE_NAME = 'github'
-    GITHUB_REMOTE_URL = project_html_url
+
+    # NOTE: General form is: https://api.github.com/repos/org/repo/collaborators{/collaborator}, hence stripping the end
+    GITHUB_REMOTE_URL = project_html_url.split('{/')
 
     HDR_LEN = 8
     GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
