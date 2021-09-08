@@ -118,27 +118,46 @@ def sync_pr_with_rebase(project_name, pr_branch, pr_html_url, pr_rest_url):
     git = Git(project_name)
     repo = Repo(project_name)
 
-    #  Set the config parameters: Better be a espressif bot
-    repo.config_writer().set_value('user', 'name', os.environ['GIT_CONFIG_NAME']).release()
-    repo.config_writer().set_value('user', 'email', os.environ['GIT_CONFIG_EMAIL']).release()
+    # #  Set the config parameters: Better be a espressif bot
+    # repo.config_writer().set_value('user', 'name', os.environ['GIT_CONFIG_NAME']).release()
+    # repo.config_writer().set_value('user', 'email', os.environ['GIT_CONFIG_EMAIL']).release()
 
-    # Download the patch for the given PR
-    pr_download_patch(pr_rest_url, project_name)
+    # # Download the patch for the given PR
+    # pr_download_patch(pr_rest_url, project_name)
+
+    # print('Checking out to master branch...')
+    # print(git.checkout('master'))
+
+    # print('Pulling the latest changes...')
+    # print(git.pull('origin','master'))
+
+    # print('Updating submodules...')
+    # print(git.submodule('update', '--init', '--recursive'))
+
+    # print('Checking out to new branch for contribution...')
+    # print(git.checkout('HEAD', b=pr_branch))
+
+    # print('Applying patch...')
+    # print(git.execute(['git','am', 'diff.patch']))
+
+    HDR_LEN = 8
+    GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
+    gh_remote = GITHUB_REMOTE_URL[: HDR_LEN] + GITHUB_TOKEN + ':' + GITHUB_TOKEN + '@' + GITHUB_REMOTE_URL[HDR_LEN :]
 
     print('Checking out to master branch...')
     print(git.checkout('master'))
 
-    print('Pulling the latest changes...')
-    print(git.pull('origin','master'))
+    print('Adding the Github remote...')
+    print(git.remote('add', GITHUB_REMOTE_NAME, gh_remote))
 
-    print('Updating submodules...')
-    print(git.submodule('update', '--init', '--recursive'))
+    print('Fetching the PR branch...')
+    print(git.fetch(GITHUB_REMOTE_NAME, 'pull/' + str(pr_num) + '/head'))
 
-    print('Checking out to new branch for contribution...')
-    print(git.checkout('HEAD', b=pr_branch))
+    print('Checking out the PR branch...')
+    print(git.checkout('FETCH_HEAD', b=pr_branch))
 
-    print('Applying patch...')
-    print(git.execute(['git','am', 'diff.patch']))
+    print('Rebasing with the latest master...')
+    print(git.rebase('master'))
 
     commit = repo.head.commit
     new_cmt_msg = commit.message + '\nMerges ' + pr_html_url
@@ -218,22 +237,22 @@ def main():
     # Deleting local repo
     shutil.rmtree(project_name)
 
-    # # NOTE: Remote takes some time to register a branch
-    time.sleep(15)
+    # # # NOTE: Remote takes some time to register a branch
+    # time.sleep(15)
 
-    print('Creating a merge request...')
-    project_gl = gl.projects.get(project_fullname)
-    mr = project_gl.mergerequests.create({'source_branch': pr_branch, 'target_branch': 'master', 'title': pr_title_desc})
+    # print('Creating a merge request...')
+    # project_gl = gl.projects.get(project_fullname)
+    # mr = project_gl.mergerequests.create({'source_branch': pr_branch, 'target_branch': 'master', 'title': pr_title_desc})
 
-    print('Updating merge request description...')
-    mr_desc = pr_body + '\n (Add more info here)' + '\n## Related'
-    mr_desc +=  '\n* Closes ' + pr_jira_issue
-    mr_desc += '\n## Release notes (Mandatory)\n ### To-be-added'
+    # print('Updating merge request description...')
+    # mr_desc = pr_body + '\n (Add more info here)' + '\n## Related'
+    # mr_desc +=  '\n* Closes ' + pr_jira_issue
+    # mr_desc += '\n## Release notes (Mandatory)\n ### To-be-added'
 
-    mr.description = mr_desc
-    mr.save()
+    # mr.description = mr_desc
+    # mr.save()
 
-    print('Done with the merge request!')
+    # print('Done with the merge request!')
 
 
 if __name__ == '__main__':
