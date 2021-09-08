@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright 2021 Espressif Systems (Shanghai) PTE LTD
+# Copyright 2021 Espressif Systems (Shanghai) CO LTD
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -65,8 +65,23 @@ def setup_project(project_fullname):
     HDR_LEN = 8
     gl_project_url = GITLAB_URL[: HDR_LEN] + GITLAB_TOKEN + ':' + GITLAB_TOKEN + '@' + GITLAB_URL[HDR_LEN :] + '/' + project_fullname + '.git'
     
-    print(Git(".").clone(gl_project_url))
+    print(Git(".").clone(gl_project_url, recursive=True))
     return gl
+
+
+def check_remote_branch(project, pr_branch):
+    ret = None
+    for x in range(0, 15):
+        try:
+            ret = project.branches.get(pr_branch)
+        except Exception:
+            time.sleep(1)
+            pass
+
+        if ret != None:
+            return
+
+    raise SystemError("PR branch creation failed!")
 
 
 # Merge PRs with/without Rebase
@@ -155,15 +170,12 @@ def main():
     # Checks whether the approver access level is above required; needs Github access token
     pr_check_approver_access(project_users_url, pr_approver)
 
-    # Getting the PR title
+    # Getting the PR title and body
     pr_title = event["pull_request"]["title"]
     idx = pr_title.find(os.environ['JIRA_PROJECT']) # Finding the JIRA issue tag
     pr_title_desc = pr_title[0 : idx - 2] # For space character
     pr_jira_issue = pr_title[idx : -1]
     pr_body = event["pull_request"]["body"]
-
-    # NOTE: Modified for testing purpose
-    project_fullname = 'app-frameworks/actions-internal-test'
 
     # Gitlab setup and cloning internal codebase
     gl = setup_project(project_fullname)
@@ -179,22 +191,23 @@ def main():
     # Deleting local repo
     shutil.rmtree(project_name)
 
-    # # # NOTE: Remote takes some time to register a branch
-    # time.sleep(15)
+    print('Creating a merge request...')
+    project_gl = gl.projects.get(project_fullname)
 
-    # print('Creating a merge request...')
-    # project_gl = gl.projects.get(project_fullname)
-    # mr = project_gl.mergerequests.create({'source_branch': pr_branch, 'target_branch': 'master', 'title': pr_title_desc})
+    # NOTE: Remote takes some time to register a branch
+    check_remote_branch(project_gl, pr_branch)
 
-    # print('Updating merge request description...')
-    # mr_desc = pr_body + '\n (Add more info here)' + '\n## Related'
-    # mr_desc +=  '\n* Closes ' + pr_jira_issue
-    # mr_desc += '\n## Release notes (Mandatory)\n ### To-be-added'
+    mr = project_gl.mergerequests.create({'source_branch': pr_branch, 'target_branch': 'master', 'title': pr_title_desc})
 
-    # mr.description = mr_desc
-    # mr.save()
+    print('Updating merge request description...')
+    mr_desc = pr_body + '\n #### (Add more info here)' + '\n## Related'
+    mr_desc +=  '\n* Closes ' + pr_jira_issue
+    mr_desc += '\n## Release notes (Mandatory)\n ### To-be-added'
 
-    # print('Done with the merge request!')
+    mr.description = mr_desc
+    mr.save()
+
+    print('Done with the merge request!')
 
 
 if __name__ == '__main__':
