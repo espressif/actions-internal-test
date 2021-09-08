@@ -176,7 +176,9 @@ def main():
     pr_title_desc = pr_title[0 : idx - 2] # For space character
     pr_jira_issue = pr_title[idx : -1]
     pr_body = event["pull_request"]["body"]
-    project_fullname = 'app_frameworks/actions-internal-test'
+
+    # NOTE: Modified for testing purpose
+    project_fullname = 'app-frameworks/actions-internal-test'
 
     # Gitlab setup and cloning internal codebase
     gl = setup_project(project_fullname)
