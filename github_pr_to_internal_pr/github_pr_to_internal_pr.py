@@ -23,23 +23,6 @@ import gitlab
 import requests
 from git import Git, Repo
 
-def pr_download_patch(pr_rest_url, project_name):
-    print('Downloading patch for PR...')
-    # TODO: If repo == private, add authorization headers for REST API calls
-    # Requires Github Access Token, with Push Access
-    GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
-    
-    req_header = {
-        'Authorization': 'token ' + GITHUB_TOKEN,
-        'Accept': 'application/vnd.github.VERSION.patch'
-    }
-    data = requests.get(pr_rest_url, headers=req_header)
-
-    file_path = project_name + '/diff.patch'
-    f = open(file_path, 'wb')
-    f.write(data.content)
-    f.close()
-
 
 def pr_check_forbidden_files(pr_files_url):
     print("Checking if PR modified forbidden files...")
@@ -86,66 +69,16 @@ def setup_project(project_fullname):
     return gl
 
 
-# Merge PRs without Rebase (for new PRs)
-def sync_pr_with_merge(project_name, pr_num, pr_branch, project_html_url):
-    git = Git(project_name)
-    
+# Merge PRs with/without Rebase
+def sync_pr(project_name, pr_num, pr_branch, project_html_url, rebase_flag):
     GITHUB_REMOTE_NAME = 'github'
     GITHUB_REMOTE_URL = project_html_url
 
     HDR_LEN = 8
     GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
     gh_remote = GITHUB_REMOTE_URL[: HDR_LEN] + GITHUB_TOKEN + ':' + GITHUB_TOKEN + '@' + GITHUB_REMOTE_URL[HDR_LEN :]
-    
-    print('Checking out to master branch...')
-    print(git.checkout('master'))
 
-    print('Adding the Github remote...')
-    print(git.remote('add', GITHUB_REMOTE_NAME, gh_remote))
-
-    print('Fetching the PR branch...')
-    print(git.fetch(GITHUB_REMOTE_NAME, 'pull/' + str(pr_num) + '/head'))
-
-    print('Checking out the PR branch...')
-    print(git.checkout('FETCH_HEAD', b=pr_branch))
-
-    print('Pushing to remote...')
-    print(git.push('--set-upstream', 'origin', pr_branch))
-
-
-# Merge PRs with Rebase approach (for old PRs)
-def sync_pr_with_rebase(project_name, pr_branch, pr_html_url, pr_rest_url, project_html_url, pr_num):
     git = Git(project_name)
-    repo = Repo(project_name)
-
-    #  Set the config parameters: Better be a espressif bot
-    repo.config_writer().set_value('user', 'name', os.environ['GIT_CONFIG_NAME']).release()
-    repo.config_writer().set_value('user', 'email', os.environ['GIT_CONFIG_EMAIL']).release()
-
-    # # Download the patch for the given PR
-    # pr_download_patch(pr_rest_url, project_name)
-
-    # print('Checking out to master branch...')
-    # print(git.checkout('master'))
-
-    # print('Pulling the latest changes...')
-    # print(git.pull('origin','master'))
-
-    # print('Updating submodules...')
-    # print(git.submodule('update', '--init', '--recursive'))
-
-    # print('Checking out to new branch for contribution...')
-    # print(git.checkout('HEAD', b=pr_branch))
-
-    # print('Applying patch...')
-    # print(git.execute(['git','am', 'diff.patch']))
-
-    GITHUB_REMOTE_NAME = 'github'
-    GITHUB_REMOTE_URL = project_html_url
-
-    HDR_LEN = 8
-    GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
-    gh_remote = GITHUB_REMOTE_URL[: HDR_LEN] + GITHUB_TOKEN + ':' + GITHUB_TOKEN + '@' + GITHUB_REMOTE_URL[HDR_LEN :]
 
     print('Checking out to master branch...')
     print(git.checkout('master'))
@@ -159,14 +92,20 @@ def sync_pr_with_rebase(project_name, pr_branch, pr_html_url, pr_rest_url, proje
     print('Checking out the PR branch...')
     print(git.checkout('FETCH_HEAD', b=pr_branch))
 
-    print('Rebasing with the latest master...')
-    print(git.rebase('master'))
+    if rebase_flag:
+        #  Set the config parameters: Better be a espressif bot
+        repo = Repo(project_name)
+        repo.config_writer().set_value('user', 'name', os.environ['GIT_CONFIG_NAME']).release()
+        repo.config_writer().set_value('user', 'email', os.environ['GIT_CONFIG_EMAIL']).release()
 
-    commit = repo.head.commit
-    new_cmt_msg = commit.message + '\nMerges ' + pr_html_url
+        print('Rebasing with the latest master...')
+        print(git.rebase('master'))
 
-    print('Amending commit message (Adding additional info about commit)...')
-    print(git.execute(['git','commit', '--amend', '-m', new_cmt_msg]))
+        commit = repo.head.commit
+        new_cmt_msg = commit.message + '\nMerges ' + pr_html_url
+
+        print('Amending commit message (Adding additional info about commit)...')
+        print(git.execute(['git','commit', '--amend', '-m', new_cmt_msg]))
 
     print('Pushing to remote...')
     print(git.push('--set-upstream', 'origin', pr_branch))
@@ -205,8 +144,6 @@ def main():
 
     pr_num = event["pull_request"]["number"]
     pr_branch = 'contrib/github_pr_' + str(pr_num)
-    pr_rest_url = event["pull_request"]["url"]
-    pr_html_url = event["pull_request"]["html_url"]
 
     pr_files_url = pr_rest_url + '/files'
     # Check whether the PR has modified forbidden files
@@ -230,9 +167,9 @@ def main():
     gl = setup_project(project_fullname)
 
     if "/rebase" in review_body:
-        sync_pr_with_rebase(project_name, pr_branch, pr_html_url, pr_rest_url, project_html_url, pr_num)
+        sync_pr(project_name, pr_num, pr_branch, project_html_url, rebase_flag=True)
     elif "/merge" in review_body:
-        sync_pr_with_merge(project_name, pr_num, pr_branch, project_html_url)
+        sync_pr(project_name, pr_num, pr_branch, project_html_url, rebase_flag=False)
     else:
         print('No action selected!!!')
         return
