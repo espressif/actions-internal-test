@@ -70,7 +70,7 @@ def setup_project(project_fullname):
 
 
 # Merge PRs with/without Rebase
-def sync_pr(project_name, pr_num, pr_branch, project_html_url, rebase_flag):
+def sync_pr(project_name, pr_num, pr_branch, project_html_url, pr_html_url, rebase_flag):
     GITHUB_REMOTE_NAME = 'github'
     GITHUB_REMOTE_URL = project_html_url
 
@@ -144,6 +144,8 @@ def main():
 
     pr_num = event["pull_request"]["number"]
     pr_branch = 'contrib/github_pr_' + str(pr_num)
+    pr_rest_url = event["pull_request"]["url"]
+    pr_html_url = event["pull_request"]["html_url"]
 
     pr_files_url = pr_rest_url + '/files'
     # Check whether the PR has modified forbidden files
@@ -167,9 +169,9 @@ def main():
     gl = setup_project(project_fullname)
 
     if "/rebase" in review_body:
-        sync_pr(project_name, pr_num, pr_branch, project_html_url, rebase_flag=True)
+        sync_pr(project_name, pr_num, pr_branch, project_html_url, pr_html_url, rebase_flag=True)
     elif "/merge" in review_body:
-        sync_pr(project_name, pr_num, pr_branch, project_html_url, rebase_flag=False)
+        sync_pr(project_name, pr_num, pr_branch, project_html_url, pr_html_url, rebase_flag=False)
     else:
         print('No action selected!!!')
         return
