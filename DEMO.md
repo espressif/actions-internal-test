@@ -1,9 +1,7 @@
 # HOW TO USE
 
-## FURIOUS FIVE
+## GODS OF OLYMPUS
 
-#### Tigress
-#### Monkey
-#### Crane
-#### Mantis
-#### Viper
+### Zeus
+### Poseidon
+### Hades
