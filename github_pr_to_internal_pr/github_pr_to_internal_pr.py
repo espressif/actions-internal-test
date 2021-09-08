@@ -114,7 +114,7 @@ def sync_pr_with_merge(project_name, pr_num, pr_branch, project_html_url):
 
 
 # Merge PRs with Rebase approach (for old PRs)
-def sync_pr_with_rebase(project_name, pr_branch, pr_html_url, pr_rest_url):
+def sync_pr_with_rebase(project_name, pr_branch, pr_html_url, pr_rest_url, project_html_url):
     git = Git(project_name)
     repo = Repo(project_name)
 
@@ -139,6 +139,9 @@ def sync_pr_with_rebase(project_name, pr_branch, pr_html_url, pr_rest_url):
 
     # print('Applying patch...')
     # print(git.execute(['git','am', 'diff.patch']))
+
+    GITHUB_REMOTE_NAME = 'github'
+    GITHUB_REMOTE_URL = project_html_url
 
     HDR_LEN = 8
     GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
@@ -227,7 +230,7 @@ def main():
     gl = setup_project(project_fullname)
 
     if "/rebase" in review_body:
-        sync_pr_with_rebase(project_name, pr_branch, pr_html_url, pr_rest_url)
+        sync_pr_with_rebase(project_name, pr_branch, pr_html_url, pr_rest_url, project_html_url)
     elif "/merge" in review_body:
         sync_pr_with_merge(project_name, pr_num, pr_branch, project_html_url)
     else:
