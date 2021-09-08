@@ -118,9 +118,9 @@ def sync_pr_with_rebase(project_name, pr_branch, pr_html_url, pr_rest_url, proje
     git = Git(project_name)
     repo = Repo(project_name)
 
-    # #  Set the config parameters: Better be a espressif bot
-    # repo.config_writer().set_value('user', 'name', os.environ['GIT_CONFIG_NAME']).release()
-    # repo.config_writer().set_value('user', 'email', os.environ['GIT_CONFIG_EMAIL']).release()
+    #  Set the config parameters: Better be a espressif bot
+    repo.config_writer().set_value('user', 'name', os.environ['GIT_CONFIG_NAME']).release()
+    repo.config_writer().set_value('user', 'email', os.environ['GIT_CONFIG_EMAIL']).release()
 
     # # Download the patch for the given PR
     # pr_download_patch(pr_rest_url, project_name)
