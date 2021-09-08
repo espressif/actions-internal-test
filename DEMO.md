@@ -7,3 +7,7 @@
 #### Crane
 #### Mantis
 #### Viper
+
+Wings of Justice
+Fists of Fury
+WuXi Finger Hold
