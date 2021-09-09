@@ -93,7 +93,8 @@ def sync_pr(project_name, pr_num, pr_branch, project_html_url, pr_html_url, reba
     GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
     gh_remote = GITHUB_REMOTE_URL[: HDR_LEN] + GITHUB_TOKEN + ':' + GITHUB_TOKEN + '@' + GITHUB_REMOTE_URL[HDR_LEN :]
 
-    git = Git(project_name)
+    repo = Repo(project_name)
+    git = repo.git
 
     print('Checking out to master branch...')
     print(git.checkout('master'))
@@ -109,7 +110,6 @@ def sync_pr(project_name, pr_num, pr_branch, project_html_url, pr_html_url, reba
 
     if rebase_flag:
         #  Set the config parameters: Better be a espressif bot
-        repo = Repo(project_name)
         repo.config_writer().set_value('user', 'name', os.environ['GIT_CONFIG_NAME']).release()
         repo.config_writer().set_value('user', 'email', os.environ['GIT_CONFIG_EMAIL']).release()
 
