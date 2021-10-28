@@ -1,7 +1,6 @@
-# HOW TO USE
+# Gods of Olympus
 
-## GODS OF OLYMPUS
-
-### Zeus
-### Poseidon
-### Hades
+### Zeus - Poseidon - Hades - Demeter
+### Athena - Ares - Apollo - Artemis - Hephaestus - Hermes
+### Hera - Aphrodite
+### Hestia - Dionysus
