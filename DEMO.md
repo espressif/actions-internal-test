@@ -1,6 +1,16 @@
 # Gods of Olympus
 
-### Zeus - Poseidon - Hades - Demeter
-### Athena - Ares - Apollo - Artemis - Hephaestus - Hermes
-### Hera - Aphrodite
-### Hestia - Dionysus
+### Zeus - Sky
+### Poseidon - Seas
+### Hades - Underworld
+### Demeter - Agriculture
+### Athena - Wisdom & Warcraft
+### Hephaestus - Fire
+### Ares - War
+### Hermes - Messenger
+### Apollo - Art
+### Artemis - Hunt
+### Hera - Mother
+### Aphrodite - Love
+### Hestia - Home
+### Dionysus - Wine
