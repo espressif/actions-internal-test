@@ -1,19 +1,8 @@
 #!/usr/bin/env python3
 #
-# Copyright 2021 Espressif Systems (Shanghai) CO LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
+# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
 import json
 import os
 import shutil
@@ -64,7 +53,7 @@ def setup_project(project_fullname):
 
     HDR_LEN = 8
     gl_project_url = GITLAB_URL[: HDR_LEN] + GITLAB_TOKEN + ':' + GITLAB_TOKEN + '@' + GITLAB_URL[HDR_LEN :] + '/' + project_fullname + '.git'
-    
+
     print(Git(".").clone(gl_project_url, recursive=True))
     return gl
 
@@ -93,8 +82,7 @@ def sync_pr(project_name, pr_num, pr_branch, project_html_url, pr_html_url, reba
     GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
     gh_remote = GITHUB_REMOTE_URL[: HDR_LEN] + GITHUB_TOKEN + ':' + GITHUB_TOKEN + '@' + GITHUB_REMOTE_URL[HDR_LEN :]
 
-    repo = Repo(project_name)
-    git = repo.git
+    git = Git(project_name)
 
     print('Checking out to master branch...')
     print(git.checkout('master'))
@@ -110,6 +98,7 @@ def sync_pr(project_name, pr_num, pr_branch, project_html_url, pr_html_url, reba
 
     if rebase_flag:
         #  Set the config parameters: Better be a espressif bot
+        repo = Repo(project_name)
         repo.config_writer().set_value('user', 'name', os.environ['GIT_CONFIG_NAME']).release()
         repo.config_writer().set_value('user', 'email', os.environ['GIT_CONFIG_EMAIL']).release()
 
@@ -131,9 +120,9 @@ def main():
         print('Not running in GitHub action context, nothing to do')
         return
 
-    if not os.environ['GITHUB_REPOSITORY'].startswith('espressif/'):
-        print('Not an Espressif repo!')
-        return
+    # if not os.environ['GITHUB_REPOSITORY'].startswith('espressif/'):
+    #     print('Not an Espressif repo!')
+    #     return
 
     # The path of the file with the complete webhook event payload. For example, /github/workflow/event.json.
     with open(os.environ['GITHUB_EVENT_PATH'], 'r') as f:
@@ -151,7 +140,7 @@ def main():
     pr_base = event["pull_request"]["base"]["ref"]
     if pr_base != 'master':
         raise SystemError("PR base illegal! Should be the master branch!")
-    
+
     project_fullname = event["repository"]["full_name"]
     project_org, project_name = project_fullname.split("/")
     project_users_url = event["repository"]["collaborators_url"]
@@ -198,12 +187,13 @@ def main():
     project_gl = gl.projects.get(project_fullname)
 
     # NOTE: Remote takes some time to register a branch
-    check_remote_branch(project_gl, pr_branch)
+    time.sleep(15)
+    # check_remote_branch(project_gl, pr_branch)
 
     mr = project_gl.mergerequests.create({'source_branch': pr_branch, 'target_branch': 'master', 'title': pr_title_desc})
 
     print('Updating merge request description...')
-    mr_desc = pr_body + '\n #### (Add more info here)' + '\n## Related'
+    mr_desc = '## Description \n' + pr_body + '\n ##### (Add more info here)' + '\n## Related'
     mr_desc +=  '\n* Closes ' + pr_jira_issue
     mr_desc += '\n## Release notes (Mandatory)\n ### To-be-added'
 
