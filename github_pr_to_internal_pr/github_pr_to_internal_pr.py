@@ -85,7 +85,7 @@ def sync_pr(project_name, pr_num, pr_branch, project_html_url, pr_html_url, reba
     git = Git(project_name)
 
     print('Checking out to master branch...')
-    print(git.checkout('master'))
+    print(git.checkout('test_master'))
 
     print('Adding the Github remote...')
     print(git.remote('add', GITHUB_REMOTE_NAME, gh_remote))
@@ -103,7 +103,7 @@ def sync_pr(project_name, pr_num, pr_branch, project_html_url, pr_html_url, reba
         repo.config_writer().set_value('user', 'email', os.environ['GIT_CONFIG_EMAIL']).release()
 
         print('Rebasing with the latest master...')
-        print(git.rebase('master'))
+        print(git.rebase('test_master'))
 
         commit = repo.head.commit
         new_cmt_msg = commit.message + '\nMerges ' + pr_html_url
@@ -127,80 +127,81 @@ def main():
     # The path of the file with the complete webhook event payload. For example, /github/workflow/event.json.
     with open(os.environ['GITHUB_EVENT_PATH'], 'r') as f:
         event = json.load(f)
-        # print(json.dumps(event, indent=4))
+        print(json.dumps(event, indent=4))
 
-    event_name = os.environ['GITHUB_EVENT_NAME']  # The name of the webhook event that triggered the workflow.
-    action = event["action"]
-    state = event["review"]["state"]
-    review_body = event["review"]["body"]
+    # # The name of the webhook event that triggered the workflow.
+    # event_name = os.environ['GITHUB_EVENT_NAME']
+    # action = event["action"]
+    # state = event["review"]["state"]
+    # review_body = event["review"]["body"]
 
-    if event_name != 'pull_request_review' or state != 'approved':
-        raise SystemError("False Trigger!")
+    # if event_name != 'pull_request_review' or state != 'approved':
+    #     raise SystemError("False Trigger!")
 
-    pr_base = event["pull_request"]["base"]["ref"]
-    if pr_base != 'master':
-        raise SystemError("PR base illegal! Should be the master branch!")
+    # # pr_base = event["pull_request"]["base"]["ref"]
+    # # if pr_base != 'master':
+    # #     raise SystemError("PR base illegal! Should be the master branch!")
 
-    project_fullname = event["repository"]["full_name"]
-    project_org, project_name = project_fullname.split("/")
-    project_users_url = event["repository"]["collaborators_url"]
-    project_html_url = event["repository"]["clone_url"]
+    # project_fullname = event["repository"]["full_name"]
+    # project_org, project_name = project_fullname.split("/")
+    # project_users_url = event["repository"]["collaborators_url"]
+    # project_html_url = event["repository"]["clone_url"]
 
-    pr_num = event["pull_request"]["number"]
-    pr_branch = 'contrib/github_pr_' + str(pr_num)
-    pr_rest_url = event["pull_request"]["url"]
-    pr_html_url = event["pull_request"]["html_url"]
+    # pr_num = event["pull_request"]["number"]
+    # pr_branch = 'contrib/github_pr_' + str(pr_num)
+    # pr_rest_url = event["pull_request"]["url"]
+    # pr_html_url = event["pull_request"]["html_url"]
 
-    pr_files_url = pr_rest_url + '/files'
-    # Check whether the PR has modified forbidden files
-    pr_check_forbidden_files(pr_files_url)
+    # pr_files_url = pr_rest_url + '/files'
+    # # Check whether the PR has modified forbidden files
+    # pr_check_forbidden_files(pr_files_url)
 
-    pr_approver = event["review"]["user"]["login"]
-    # Checks whether the approver access level is above required; needs Github access token
-    pr_check_approver_access(project_users_url, pr_approver)
+    # pr_approver = event["review"]["user"]["login"]
+    # # Checks whether the approver access level is above required; needs Github access token
+    # pr_check_approver_access(project_users_url, pr_approver)
 
-    # Getting the PR title and body
-    pr_title = event["pull_request"]["title"]
-    idx = pr_title.find(os.environ['JIRA_PROJECT']) # Finding the JIRA issue tag
-    pr_title_desc = pr_title[0 : idx - 2] # For space character
-    pr_jira_issue = pr_title[idx : -1]
-    pr_body = event["pull_request"]["body"]
+    # # Getting the PR title and body
+    # pr_title = event["pull_request"]["title"]
+    # idx = pr_title.find(os.environ['JIRA_PROJECT']) # Finding the JIRA issue tag
+    # pr_title_desc = pr_title[0 : idx - 2] # For space character
+    # pr_jira_issue = pr_title[idx : -1]
+    # pr_body = event["pull_request"]["body"]
 
-    # NOTE: Modified for testing purpose
-    project_fullname = 'app-frameworks/actions-internal-test'
+    # # NOTE: Modified for testing purpose
+    # project_fullname = 'app-frameworks/actions-internal-test'
 
-    # Gitlab setup and cloning internal codebase
-    gl = setup_project(project_fullname)
+    # # Gitlab setup and cloning internal codebase
+    # gl = setup_project(project_fullname)
 
-    if "/rebase" in review_body:
-        sync_pr(project_name, pr_num, pr_branch, project_html_url, pr_html_url, rebase_flag=True)
-    elif "/merge" in review_body:
-        sync_pr(project_name, pr_num, pr_branch, project_html_url, pr_html_url, rebase_flag=False)
-    else:
-        print('No action selected!!!')
-        return
+    # if "/rebase" in review_body:
+    #     sync_pr(project_name, pr_num, pr_branch, project_html_url, pr_html_url, rebase_flag=True)
+    # elif "/merge" in review_body:
+    #     sync_pr(project_name, pr_num, pr_branch, project_html_url, pr_html_url, rebase_flag=False)
+    # else:
+    #     print('No action selected!!!')
+    #     return
 
-    # Deleting local repo
-    shutil.rmtree(project_name)
+    # # Deleting local repo
+    # shutil.rmtree(project_name)
 
-    print('Creating a merge request...')
-    project_gl = gl.projects.get(project_fullname)
+    # print('Creating a merge request...')
+    # project_gl = gl.projects.get(project_fullname)
 
-    # NOTE: Remote takes some time to register a branch
-    time.sleep(15)
-    # check_remote_branch(project_gl, pr_branch)
+    # # NOTE: Remote takes some time to register a branch
+    # time.sleep(15)
+    # # check_remote_branch(project_gl, pr_branch)
 
-    mr = project_gl.mergerequests.create({'source_branch': pr_branch, 'target_branch': 'master', 'title': pr_title_desc})
+    # mr = project_gl.mergerequests.create({'source_branch': pr_branch, 'target_branch': 'test_master', 'title': pr_title_desc})
 
-    print('Updating merge request description...')
-    mr_desc = '## Description \n' + pr_body + '\n ##### (Add more info here)' + '\n## Related'
-    mr_desc +=  '\n* Closes ' + pr_jira_issue
-    mr_desc += '\n## Release notes (Mandatory)\n ### To-be-added'
+    # print('Updating merge request description...')
+    # mr_desc = '## Description \n' + pr_body + '\n ##### (Add more info here)' + '\n## Related'
+    # mr_desc +=  '\n* Closes ' + pr_jira_issue
+    # mr_desc += '\n## Release notes (Mandatory)\n ### To-be-added'
 
-    mr.description = mr_desc
-    mr.save()
+    # mr.description = mr_desc
+    # mr.save()
 
-    print('Done with the merge request!')
+    # print('Done with the merge request!')
 
 
 if __name__ == '__main__':
