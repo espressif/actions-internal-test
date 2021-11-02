@@ -1,7 +1,4 @@
 name: Sync approved PRs to internal codebase
-# on:
-#   pull_request_review:
-#     types: [submitted]
 on: issue_comment
 
 jobs:
