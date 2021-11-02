@@ -4,4 +4,5 @@
 
 1. Enable GitHub Actions
 2. Add required secrets
-3. Add action-execution script
+3. Select Event Trigger
+4. Add execution script
