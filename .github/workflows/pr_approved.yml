@@ -1,0 +1,21 @@
+name: Sync approved PRs to internal codebase
+on: issue_comment
+
+jobs:
+  sync_prs_to_internal_codebase:
+    name: GitHub PR to Internal Codebase Sync
+    runs-on: ubuntu-latest
+    if: github.event.issue.pull_request &&
+        (startsWith(github.event.comment.body, '/rebase') || startsWith(github.event.comment.body, '/merge')) &&
+        contains(github.event.comment.body, 'sha=')
+    steps:
+      - uses: actions/checkout@master
+      - name: GitHub PR to Internal Codebase Sync
+        uses: laukik-hase/github-actions/github_pr_to_internal_pr@test
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLAB_URL: ${{ secrets.GITLAB_URL }}
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+          GIT_CONFIG_NAME: ${{ secrets.GIT_CONFIG_NAME }}
+          GIT_CONFIG_EMAIL: ${{ secrets.GIT_CONFIG_EMAIL }}
+          JIRA_PROJECT: IDFGH
