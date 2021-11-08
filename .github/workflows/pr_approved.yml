@@ -5,14 +5,15 @@ jobs:
   sync_prs_to_internal_codebase:
     name: GitHub PR to Internal Codebase Sync
     runs-on: ubuntu-latest
+    if: github.event.issue.pull_request && (startsWith(github.event.comment.body, '/rebase') || startsWith(github.event.comment.body, '/merge')) 
     steps:
       - uses: actions/checkout@master
       - name: GitHub PR to Internal Codebase Sync
         uses: espressif/actions-internal-test/github_pr_to_internal_pr@feature/sync_approved_pr
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLAB_URL: ${{ secrets.GITLAB_URL }}
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GIT_CONFIG_NAME: ${{ secrets.GIT_CONFIG_NAME }}
           GIT_CONFIG_EMAIL: ${{ secrets.GIT_CONFIG_EMAIL }}
           JIRA_PROJECT: IDFGH
