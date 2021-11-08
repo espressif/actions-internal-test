@@ -13,22 +13,22 @@ import requests
 from git import Git, Repo
 
 
-def pr_check_forbidden_files(pr_files_url):
-    print("Checking if PR modified forbidden files...")
+def pr_check_if_approved(pr_reviews_url):
+    print('Checking if PR has been approved...')
     # Requires Github Access Token, with Push Access
     GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
 
-    r = requests.get(pr_files_url, headers={'Authorization': 'token ' + GITHUB_TOKEN})
+    r = requests.get(pr_reviews_url, headers={'Authorization': 'token ' + GITHUB_TOKEN})
     r_data = r.json()
-
-    pr_files = [file_info['filename'] for file_info in r_data
-                if (file_info['filename']).find('.gitlab') != -1 or (file_info['filename']).find('.github') != -1]
-    if pr_files:
-        raise SystemError("PR modifying forbidden files!!!")
-
-
-def pr_check_approver_access(project_users_url, pr_approver):
-    print("Checking if PR approver access level matches criteria...")
+    for review in r_data:
+        if review['state'] == 'APPROVED':
+            return review['user']['login']
+    
+    raise SystemError("Invalid operation! Please approve PR before trying to sync!")
+    
+    
+def pr_check_approver_access(project_users_url, pr_approver, pr_commenter):
+    print('Checking if PR approver access level matches criteria...')
     # Requires Github Access Token, with Push Access
     GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
 
@@ -42,9 +42,37 @@ def pr_check_approver_access(project_users_url, pr_approver):
     if not pr_appr_perm['triage']:
         raise SystemError("PR Approver Access is below TRIAGE level!")
 
+    if pr_commenter != pr_approver:
+        raise SystemError("PR Approver and the workflow initiator (with comment) must be the same!")
+
+
+def pr_check_forbidden_files(pr_files_url):
+    print('Checking if PR modified forbidden files...')
+    # Requires Github Access Token, with Push Access
+    GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
+
+    r = requests.get(pr_files_url, headers={'Authorization': 'token ' + GITHUB_TOKEN})
+    r_data = r.json()
+
+    pr_files = [file_info['filename'] for file_info in r_data
+                if (file_info['filename']).find('.gitlab') != -1 or (file_info['filename']).find('.github') != -1]
+    if pr_files:
+        raise SystemError("PR modifying forbidden files!!!")
+
+
+def pr_fetch_details(pr_url):
+    print('Fetching required PR details...')
+    # Requires Github Access Token, with Push Access
+    GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
+
+    r = requests.get(pr_url, headers={'Authorization': 'token ' + GITHUB_TOKEN})
+    r_data = r.json()
+
+    return r_data
+
 
 def setup_project(project_fullname):
-    print('Connecting to gitlab...')
+    print('Connecting to GitLab...')
     GITLAB_URL = os.environ['GITLAB_URL']
     GITLAB_TOKEN = os.environ['GITLAB_TOKEN']
 
@@ -74,7 +102,7 @@ def check_remote_branch(project, pr_branch):
 
 
 # Merge PRs with/without Rebase
-def sync_pr(project_name, pr_num, pr_branch, project_html_url, pr_html_url, rebase_flag):
+def sync_pr(project_name, pr_num, pr_branch, pr_commit_id, project_html_url, pr_html_url, rebase_flag):
     GITHUB_REMOTE_NAME = 'github'
     GITHUB_REMOTE_URL = project_html_url
 
@@ -95,6 +123,12 @@ def sync_pr(project_name, pr_num, pr_branch, project_html_url, pr_html_url, reba
 
     print('Checking out the PR branch...')
     print(git.checkout('FETCH_HEAD', b=pr_branch))
+   
+    print('Checking whether specified commit ID matches with user branch HEAD...')
+    expected_commit_id = git.rev_parse('--short', 'HEAD')
+
+    if pr_commit_id != expected_commit_id:
+        raise SystemError("PR Commit SHA ID in workflow comment and user branch do not match!")
 
     if rebase_flag:
         #  Set the config parameters: Better be a espressif bot
@@ -127,81 +161,84 @@ def main():
     # The path of the file with the complete webhook event payload. For example, /github/workflow/event.json.
     with open(os.environ['GITHUB_EVENT_PATH'], 'r') as f:
         event = json.load(f)
-        print(json.dumps(event, indent=4))
+        # print(json.dumps(event, indent=4))
 
-    # # The name of the webhook event that triggered the workflow.
-    # event_name = os.environ['GITHUB_EVENT_NAME']
-    # action = event["action"]
-    # state = event["review"]["state"]
-    # review_body = event["review"]["body"]
+    project_fullname = event['repository']['full_name']
+    project_org, project_name = project_fullname.split('/')
+    project_users_url = event['repository']['collaborators_url']
+    project_html_url = event['repository']['clone_url']
 
-    # if event_name != 'pull_request_review' or state != 'approved':
-    #     raise SystemError("False Trigger!")
+    pr_num = event['issue']['number']
+    pr_branch = 'contrib/github_pr_' + str(pr_num)
+    pr_rest_url = event['issue']['pull_request']['url'] 
+    pr_html_url = event['issue']['pull_request']['html_url']
 
-    # # pr_base = event["pull_request"]["base"]["ref"]
-    # # if pr_base != 'master':
-    # #     raise SystemError("PR base illegal! Should be the master branch!")
+    pr_review_body = event['comment']['body']
+    idx = pr_review_body.find('sha')
+    pr_review_cmd = pr_review_body[0 : idx - 1] 
+    pr_commit_id = pr_review_body[idx + 4 : ]
+    pr_commenter = event['comment']['user']['login']
 
-    # project_fullname = event["repository"]["full_name"]
-    # project_org, project_name = project_fullname.split("/")
-    # project_users_url = event["repository"]["collaborators_url"]
-    # project_html_url = event["repository"]["clone_url"]
+    pr_reviews_url = pr_rest_url + '/reviews'
+    # Check whether the PR has been approved or not
+    pr_approver = pr_check_if_approved(pr_reviews_url)
 
-    # pr_num = event["pull_request"]["number"]
-    # pr_branch = 'contrib/github_pr_' + str(pr_num)
-    # pr_rest_url = event["pull_request"]["url"]
-    # pr_html_url = event["pull_request"]["html_url"]
+    # Checks whether the approver access level is above required; needs Github access token
+    pr_check_approver_access(project_users_url, pr_approver, pr_commenter)
 
-    # pr_files_url = pr_rest_url + '/files'
-    # # Check whether the PR has modified forbidden files
-    # pr_check_forbidden_files(pr_files_url)
+    pr_files_url = pr_rest_url + '/files'
+    # Check whether the PR has modified forbidden files
+    pr_check_forbidden_files(pr_files_url)
 
-    # pr_approver = event["review"]["user"]["login"]
-    # # Checks whether the approver access level is above required; needs Github access token
-    # pr_check_approver_access(project_users_url, pr_approver)
+    #  Fetching required PR details
+    pr_data = pr_fetch_details(pr_rest_url)
 
-    # # Getting the PR title and body
-    # pr_title = event["pull_request"]["title"]
-    # idx = pr_title.find(os.environ['JIRA_PROJECT']) # Finding the JIRA issue tag
-    # pr_title_desc = pr_title[0 : idx - 2] # For space character
-    # pr_jira_issue = pr_title[idx : -1]
-    # pr_body = event["pull_request"]["body"]
+    pr_target_branch = pr_data['base']['ref']
+    # if pr_target_branch != 'master':
+    #     raise SystemError("Illegal base branch - set it to master!")
 
-    # # NOTE: Modified for testing purpose
-    # project_fullname = 'app-frameworks/actions-internal-test'
+    # Getting the PR title and body
+    pr_title = pr_data['title']
+    idx = pr_title.find(os.environ['JIRA_PROJECT']) # Finding the JIRA issue tag
+    pr_title_desc = pr_title[0 : idx - 2] # For space character
+    pr_jira_issue = pr_title[idx : -1]
+    pr_body = pr_data['body']
 
-    # # Gitlab setup and cloning internal codebase
-    # gl = setup_project(project_fullname)
+    # NOTE: Modified for testing purpose
+    project_fullname = 'app-frameworks/actions-internal-test'
 
-    # if "/rebase" in review_body:
-    #     sync_pr(project_name, pr_num, pr_branch, project_html_url, pr_html_url, rebase_flag=True)
-    # elif "/merge" in review_body:
-    #     sync_pr(project_name, pr_num, pr_branch, project_html_url, pr_html_url, rebase_flag=False)
-    # else:
-    #     print('No action selected!!!')
-    #     return
+    # Gitlab setup and cloning internal codebase
+    gl = setup_project(project_fullname)
+    project_gl = gl.projects.get(project_fullname)
 
-    # # Deleting local repo
-    # shutil.rmtree(project_name)
+    if pr_review_cmd.startswith('/rebase'):
+        sync_pr(project_name, pr_num, pr_branch, pr_commit_id, project_html_url, pr_html_url, rebase_flag=True)
+    elif pr_review_cmd.startswith('/merge'):
+        sync_pr(project_name, pr_num, pr_branch, pr_commit_id, project_html_url, pr_html_url, rebase_flag=False)
+    else:
+        print('No action selected!!!')
+        return
 
-    # print('Creating a merge request...')
-    # project_gl = gl.projects.get(project_fullname)
+    # Deleting local repo
+    shutil.rmtree(project_name)
 
-    # # NOTE: Remote takes some time to register a branch
-    # time.sleep(15)
-    # # check_remote_branch(project_gl, pr_branch)
+    print('Creating a merge request...')
+    project_gl = gl.projects.get(project_fullname)
 
-    # mr = project_gl.mergerequests.create({'source_branch': pr_branch, 'target_branch': 'test_master', 'title': pr_title_desc})
+    # NOTE: Remote takes some time to register a branch
+    time.sleep(15)
 
-    # print('Updating merge request description...')
-    # mr_desc = '## Description \n' + pr_body + '\n ##### (Add more info here)' + '\n## Related'
-    # mr_desc +=  '\n* Closes ' + pr_jira_issue
-    # mr_desc += '\n## Release notes (Mandatory)\n ### To-be-added'
+    mr = project_gl.mergerequests.create({'source_branch': pr_branch, 'target_branch': 'test_master', 'title': pr_title_desc})
 
-    # mr.description = mr_desc
-    # mr.save()
+    print('Updating merge request description...')
+    mr_desc = '## Description \n' + pr_body + '\n ##### (Add more info here)' + '\n## Related'
+    mr_desc +=  '\n* Closes ' + pr_jira_issue
+    mr_desc += '\n## Release notes (Mandatory)\n ### To-be-added'
 
-    # print('Done with the merge request!')
+    mr.description = mr_desc
+    mr.save()
+
+    print('Done with the merge request!')
 
 
 if __name__ == '__main__':
