@@ -8,3 +8,4 @@
 4. Add execution script
 5. Add .yaml workflow
 6. Set target script destination
+7. Add target script: python, bash or any other scripting language
