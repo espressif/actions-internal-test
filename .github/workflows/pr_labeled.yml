@@ -1,0 +1,11 @@
+name: Test - PR Label Event
+on:
+  pull_request_target:
+    types: [labeled]
+
+jobs:
+  pr_approved_label:
+    name: Test - PR Label Event
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "${{toJSON(github.event)}}""
