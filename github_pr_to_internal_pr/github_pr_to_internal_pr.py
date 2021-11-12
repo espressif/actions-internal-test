@@ -70,7 +70,7 @@ def setup_project(project_fullname):
     HDR_LEN = 8
     gl_project_url = GITLAB_URL[: HDR_LEN] + GITLAB_TOKEN + ':' + GITLAB_TOKEN + '@' + GITLAB_URL[HDR_LEN :] + '/' + project_fullname + '.git'
 
-    print(Git(".").clone(gl_project_url, recursive=True))
+    Git(".").clone(gl_project_url, recursive=True)
     return gl
 
 
@@ -124,9 +124,8 @@ def update_mr(project_name, pr_num, pr_branch, pr_commit_id, project_html_url, p
 
     print('Checking whether specified commit ID matches with user branch HEAD...')
     expected_commit_id = git.rev_parse('--short', 'HEAD')
-    print('exp: ', expected_commit_id, len(expected_commit_id))
-    print('cur: ', pr_commit_id, len(pr_commit_id))
-    if pr_commit_id.startswith(expected_commit_id):
+
+    if not pr_commit_id.startswith(expected_commit_id):
         raise SystemError("PR Commit SHA1 in workflow comment and user branch do not match!")
 
     print('Pushing to remote...')
@@ -159,7 +158,7 @@ def sync_pr(project_name, pr_num, pr_branch, pr_commit_id, project_html_url, pro
     print('Checking whether specified commit ID matches with user branch HEAD...')
     expected_commit_id = git.rev_parse('--short', 'HEAD')
 
-    if pr_commit_id.startswith(expected_commit_id):
+    if not pr_commit_id.startswith(expected_commit_id):
         raise SystemError("PR Commit SHA1 in workflow comment and user branch do not match!")
 
     if rebase_flag:
