@@ -21,18 +21,12 @@ def pr_check_approver(pr_creator, pr_comments_url, pr_approve_labeller):
     r = requests.get(pr_comments_url, headers={'Authorization': 'token ' + GITHUB_TOKEN})
     r_data = r.json()
 
-    err = 0
     for comment in reversed(r_data):
         comment_body = comment['body']
-        if comment_body.startswith('sha='):
-            err= 1
-            if comment['user']['login'] == pr_approve_labeller != pr_creator:
+        if comment_body.startswith('sha=') and comment['user']['login'] == pr_approve_labeller != pr_creator:
                 return comment_body[4 : ]
 
-    if err == 1:
-        raise SystemError("PR Comment Error: PR commenter and labeller do not match!")
-
-    raise SystemError("PR Comment Error: Command comment does not exist!")
+    raise SystemError("PR Comment Error: Ensure that Command comment exists and PR commenter and labeller match!")
 
 
 def pr_check_forbidden_files(pr_files_url):
@@ -70,6 +64,7 @@ def setup_project(project_fullname):
     HDR_LEN = 8
     gl_project_url = GITLAB_URL[: HDR_LEN] + GITLAB_TOKEN + ':' + GITLAB_TOKEN + '@' + GITLAB_URL[HDR_LEN :] + '/' + project_fullname + '.git'
 
+    print('Cloning repository...')
     Git(".").clone(gl_project_url, recursive=True)
     return gl
 
@@ -102,8 +97,9 @@ def check_update_label(pr_label, pr_labels_list):
 
 # Update existing MR
 def update_mr(project_name, pr_num, pr_branch, pr_commit_id, project_html_url, project_gl):
-    branch = project_gl.branches.get(pr_branch)
-    if not branch:
+    try:
+        project_gl.branches.get(pr_branch)
+    except:
         raise SystemError("PR Update: No branch found on internal remote to update!")
 
     GITHUB_REMOTE_NAME = 'github'
@@ -114,8 +110,8 @@ def update_mr(project_name, pr_num, pr_branch, pr_commit_id, project_html_url, p
     git.remote('add', GITHUB_REMOTE_NAME, gh_remote)
     git.checkout(pr_branch)
 
-    print('Checking out to master...')
-    git.checkout('master')
+    print('Checking out to test_master...')
+    git.checkout('test_master')
 
     print('Updating the PR branch...')
     git.branch('--delete', pr_branch)
@@ -134,8 +130,11 @@ def update_mr(project_name, pr_num, pr_branch, pr_commit_id, project_html_url, p
 
 # Merge PRs with/without Rebase
 def sync_pr(project_name, pr_num, pr_branch, pr_commit_id, project_html_url, project_gl, pr_html_url, rebase_flag):
-    branch = project_gl.branches.get(pr_branch)
-    if branch:
+    try:
+        project_gl.branches.get(pr_branch)
+    except:
+        pass
+    else:
         raise SystemError("PR Merge/Rebase: Branch/MR already exists for PR!")
 
     GITHUB_REMOTE_NAME = 'github'
@@ -143,7 +142,7 @@ def sync_pr(project_name, pr_num, pr_branch, pr_commit_id, project_html_url, pro
 
     git = Git(project_name)
 
-    print('Checking out to master branch...')
+    print('Checking out to test_master branch...')
     git.checkout('test_master')
 
     print('Adding the Github remote...')
@@ -167,7 +166,7 @@ def sync_pr(project_name, pr_num, pr_branch, pr_commit_id, project_html_url, pro
         repo.config_writer().set_value('user', 'name', os.environ['GIT_CONFIG_NAME']).release()
         repo.config_writer().set_value('user', 'email', os.environ['GIT_CONFIG_EMAIL']).release()
 
-        print('Rebasing with the latest master...')
+        print('Rebasing with the latest test_master...')
         git.rebase('test_master')
 
         commit = repo.head.commit
@@ -185,9 +184,9 @@ def main():
         print('Not running in GitHub action context, nothing to do')
         return
 
-    # if not os.environ['GITHUB_REPOSITORY'].startswith('espressif/'):
-    #     print('Not an Espressif repo!')
-    #     return
+    if not os.environ['GITHUB_REPOSITORY'].startswith('espressif/'):
+        print('Not an Espressif repo!')
+        return
 
     # The path of the file with the complete webhook event payload. For example, /github/workflow/event.json.
     with open(os.environ['GITHUB_EVENT_PATH'], 'r') as f:
@@ -200,8 +199,6 @@ def main():
 
     pr_label = event['label']['name']
     pr_labels_list = event['pull_request']['labels']
-    if pr_label == LABEL_UPDATE:
-        check_update_label(pr_label, pr_labels_list)
 
     pr_approve_labeller = event['sender']['login']
     pr_creator = event['pull_request']['user']['login']
@@ -211,7 +208,6 @@ def main():
 
     project_fullname = event['repository']['full_name']
     project_org, project_name = project_fullname.split('/')
-    project_users_url = event['repository']['collaborators_url']
     project_html_url = event['repository']['clone_url']
 
     pr_num = event['pull_request']['number']
@@ -238,10 +234,11 @@ def main():
     project_gl = gl.projects.get(project_fullname)
 
     if pr_label == LABEL_REBASE:
-        sync_pr(project_name, pr_num, pr_branch, pr_commit_id, project_html_url, pr_html_url, rebase_flag=True)
+        sync_pr(project_name, pr_num, pr_branch, pr_commit_id, project_html_url, project_gl, pr_html_url, rebase_flag=True)
     elif pr_label == LABEL_MERGE:
-        sync_pr(project_name, pr_num, pr_branch, pr_commit_id, project_html_url, pr_html_url, rebase_flag=False)
+        sync_pr(project_name, pr_num, pr_branch, pr_commit_id, project_html_url, project_gl, pr_html_url, rebase_flag=False)
     elif pr_label == LABEL_UPDATE:
+        check_update_label(pr_label, pr_labels_list)
         update_mr(project_name, pr_num, pr_branch, pr_commit_id, project_html_url, project_gl)
         print('Done with the workflow!')
         return
