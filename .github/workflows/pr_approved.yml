@@ -1,15 +1,19 @@
 name: Sync approved PRs to internal codebase
-on: issue_comment
+on:
+  pull_request_target:
+    types: [labeled]
 
 jobs:
   sync_prs_to_internal_codebase:
     name: GitHub PR to Internal Codebase Sync
     runs-on: ubuntu-latest
-    if: github.event.issue.pull_request && (startsWith(github.event.comment.body, '/rebase') || startsWith(github.event.comment.body, '/merge')) 
+    if: (github.event.label.name == 'PR-Sync-Merge')   ||
+        (github.event.label.name == 'PR-Sync-Rebase')  ||
+        (github.event.label.name == 'PR-Sync-Update')
     steps:
       - uses: actions/checkout@master
       - name: GitHub PR to Internal Codebase Sync
-        uses: espressif/actions-internal-test/github_pr_to_internal_pr@feature/sync_approved_pr
+        uses: espressif/actions-internal-test/github_pr_to_internal_pr@feature/sync_labeled_pr
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLAB_URL: ${{ secrets.GITLAB_URL }}
