@@ -12,3 +12,5 @@
 8. Setup Dockerfile
 9. Test runs
 10. Good to go!
+11. Take feedback from users and note down bugs
+12. Fix and patch; run again
