@@ -17,3 +17,4 @@
 13. Workflow execution is very slow, find ways to fasten it.
 14. Github clone needed
 15. Test the changes rigorously
+16. Test all individual elements
