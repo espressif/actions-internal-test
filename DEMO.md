@@ -15,3 +15,5 @@
 11. Take feedback from users and note down bugs
 12. Fix and patch; run again
 13. Workflow execution is very slow, find ways to fasten it.
+14. Github clone needed
+15. Test the changes rigorously
