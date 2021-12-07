@@ -18,3 +18,7 @@
 14. Github clone needed
 15. Test the changes rigorously
 16. Test all individual elements
+17. Instruction 17
+18. Instruction 18
+19. Instruction 19
+20. Instruction 20
