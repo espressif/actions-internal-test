@@ -175,6 +175,7 @@ def main():
     # The path of the file with the complete webhook event payload. For example, /github/workflow/event.json.
     with open(os.environ['GITHUB_EVENT_PATH'], 'r') as f:
         event = json.load(f)
+        print(event)
 
     LABEL_MERGE = 'PR-Sync-Merge'
     LABEL_REBASE = 'PR-Sync-Rebase'
@@ -207,7 +208,7 @@ def main():
     idx = pr_title.find(os.environ['JIRA_PROJECT'])  # Finding the JIRA issue tag
     pr_title_desc = pr_title[0:idx - 2] + ' (GitHub PR)'
     pr_jira_issue = pr_title[idx:-1]
-    pr_body = event['pull_request']['body']
+    pr_body = str(event['pull_request']['body'] or 'None')
 
     # NOTE: Modified for testing purpose
     repo_fullname = 'app-frameworks/actions-internal-test'
