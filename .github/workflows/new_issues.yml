@@ -3,6 +3,8 @@ name: Sync issues to Jira
 # This workflow will be triggered when a new issue is opened
 on: issues
 
+concurrency: jira_issues
+
 jobs:
   sync_issues_to_jira:
     name: Sync issues to Jira
