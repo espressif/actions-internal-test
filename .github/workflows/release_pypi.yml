@@ -23,6 +23,7 @@ jobs:
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_PROJECT_TOKEN }}
+      working-directory: ./esp_cryptoauth_utility
       run: |
         PUBLISHED_VERSION=$(curl https://pypi.org/pypi/esp_cryptoauth_utility/json 2>/dev/null | jq -r '.info.version')
         CURRENT_VERSION=$(python setup.py --version 2>/dev/null)
@@ -31,7 +32,7 @@ jobs:
           exit 1
         else
           echo "Packaging and publishing new esp_cryptoauth_utility version: ${CURRENT_VERSION}"
-          python esp_cryptoauth_utility/setup.py sdist 
-          tar -ztvf esp_cryptoauth_utility/dist/*
-          twine upload esp_cryptoauth_utility/dist/*
+          python setup.py sdist
+          tar -ztvf dist/*
+          twine upload dist/*
         fi
