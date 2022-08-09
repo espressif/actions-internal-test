@@ -20,17 +20,12 @@ try:
 except ImportError:
     print(
         "Package setuptools is missing from your Python installation. "
-        "Please see the installation section in the esptool documentation"
+        "Please see the installation section in the esp_cryptoauth_utility documentation"
         " for instructions on how to install it."
     )
     exit(1)
 
-# Example code to pull version from esptool module with regex, taken from
-# https://packaging.python.org/en/latest/guides/single-sourcing-package-version/
-def find_version():
-    with open(os.path.join(os.path.dirname(__file__), 'VERSION')) as version_file:
-        version = version_file.read().strip()
-        return version
+VERSION = '0.9.0'
 
 long_description = """
 ==========
@@ -52,7 +47,7 @@ The License for the project can be found `here <https://github.com/espressif/esp
 
 setup(
     name="esp_cryptoauth_utility",
-    version=find_version(),
+    version=VERSION,
     description="A python utility which helps to configure and provision ATECC608 chip connected to ESP32 module",
     long_description=long_description,
     url="https://github.com/espressif/esp-cryptoauthlib/tree/master/esp_cryptoauth_utility",
