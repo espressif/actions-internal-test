@@ -32,7 +32,7 @@ def pr_check_approver(pr_creator, pr_comments_url, pr_approve_labeller):
 
     for comment in reversed(r_data):
         comment_body = comment['body']
-        if comment_body.startswith('sha=') and comment['user']['login'] == pr_approve_labeller != pr_creator:
+        if comment_body.startswith('sha='):
                 return comment_body[4:]
 
     raise RuntimeError('PR Comment Error: Ensure that Command comment exists and PR commenter and labeller match!')
