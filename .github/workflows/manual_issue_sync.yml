@@ -1,7 +1,16 @@
 name: Manually trigger sync issue to Jira
 
 # This workflow will be triggered manually
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      my-input:
+        description: 'A required input parameter'
+        required: true
+      optional-input:
+        description: 'An optional input parameter'
+        required: false
+
 
 concurrency: jira_issues
 
