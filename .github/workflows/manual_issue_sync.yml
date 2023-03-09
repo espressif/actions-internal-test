@@ -2,15 +2,8 @@ name: Manually trigger sync issue to Jira
 
 # This workflow will be triggered manually
 on:
-  workflow_dispatch:
-    inputs:
-      action:
-        description: 'Action to be performed'
-        required: true
-        default: 'mirror issues'
-      issue-numbers:
-        description: 'Issue numbers'
-        required: true
+  schedule:
+    - cron: "0 * * * *"
 
 concurrency: jira_issues
 
