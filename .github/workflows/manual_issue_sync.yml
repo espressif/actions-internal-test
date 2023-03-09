@@ -3,7 +3,7 @@ name: Manually trigger sync issue to Jira
 # This workflow will be triggered manually
 on:
   schedule:
-    - cron: "0 * * * *"
+    - cron: "*/5 * * * *"
 
 concurrency: jira_issues
 
