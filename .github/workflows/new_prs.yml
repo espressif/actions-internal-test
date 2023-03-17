@@ -4,7 +4,7 @@ name: Sync remain PRs to Jira
 # Note that, PRs can also get synced when new PR comment is created
 on:
   schedule:
-    - cron: "0 * * * *"
+    - cron: "*/5 * * * *"
 
 # Limit to single concurrent run for workflows which can create Jira issues.
 # Same concurrency group is used in new_issues.yml
