@@ -7,7 +7,7 @@ on:
        action:
          description: 'Action to be performed'
          required: true
-         default: 'mirror issues'
+         default: 'mirror-issues'
        issue-numbers:
          description: 'Issue numbers'
          required: true
