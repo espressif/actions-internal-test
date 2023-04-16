@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@master
       - name: Sync PRs to Jira project
-        uses: espressif/github-actions/sync_issues_to_jira@master
+        uses: igrr/github-actions/sync_issues_to_jira@bugfix/jira_duplicate_issue
         with:
           cron_job: true
         env:
