@@ -1,4 +1,4 @@
-name: Sync PRs to JIRA
+name: Sync MQTT PRs to JIRA
 
 # This workflow will be triggered when a pull request is opened
 on: pull_request
