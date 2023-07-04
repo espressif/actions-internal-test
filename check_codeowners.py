@@ -81,6 +81,10 @@ def action_identify(args: argparse.Namespace) -> None:
     all_files = get_all_files()
     with open(CODEOWNERS_PATH) as f:
         for line in f:
+            print('START ######### line')
+            print(line)
+            print('all_files')
+            print(all_files)
             line = line.strip()
             if not line or line.startswith('#'):
                 continue
@@ -88,6 +92,11 @@ def action_identify(args: argparse.Namespace) -> None:
             path_pattern = tokens[0]
             owners = tokens[1:]
             files = files_by_pattern(all_files, path_pattern)
+            print('files')
+            print(files)
+            print('args.path')
+            print(args.path)
+            print('END #################')
             if args.path in files:
                 best_match = owners
     for owner in best_match:

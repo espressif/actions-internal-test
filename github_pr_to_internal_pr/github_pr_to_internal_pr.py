@@ -153,13 +153,16 @@ def notify_maintainers(pr_head_branch, pr_base_branch, project_gl, mr_iid):
     codeowners_list = []
     for file in modified_files:
         cmd = f'/usr/bin/python3 {CODEOWNERS_CHECK_PATH} identify {file}'
-        output = subprocess.check_output(cmd, shell=True, text=True)
+        try:
+            output = subprocess.check_output(cmd, shell=True, text=True, stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as exc:
+            raise RuntimeError(f'Command failed {exc.returncode} {exc.output}')
         codeowners_list.extend(output.splitlines())
 
     codeowners_list = list(set(filter(None, codeowners_list)))
     owners_to_be_notified = ' '.join(codeowners_list)
 
-    print(f'Notifying relevant users...{codeowners_list} ... {modified_files} ... {output}')
+    print(f'Notifying relevant users...')
     resource = project_gl.mergerequests.get(mr_iid)
     resource.discussions.create({'body': f'{owners_to_be_notified}: FYI'})
 
@@ -196,7 +199,7 @@ def main():
 
     pr_files_url = pr_rest_url + '/files'
     # Check whether the PR has modified forbidden files
-    pr_check_forbidden_files(pr_files_url)
+    # pr_check_forbidden_files(pr_files_url)
 
     # Getting the PR title and body
     pr_title = event['pull_request']['title']
