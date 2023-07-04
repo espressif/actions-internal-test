@@ -19,7 +19,7 @@ LABEL_MERGE  = 'PR-Sync-Merge'
 LABEL_REBASE = 'PR-Sync-Rebase'
 LABEL_UPDATE = 'PR-Sync-Update'
 
-CODEOWNERS_CHECK_PATH = './tools/ci/check_codeowners.py'
+CODEOWNERS_CHECK_PATH = './check_codeowners.py'
 
 
 def pr_check_approver(pr_creator, pr_comments_url, pr_approve_labeller):
