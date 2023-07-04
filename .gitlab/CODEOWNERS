@@ -1,0 +1,3 @@
+/README.md                                @actions-internal-test-codeowners/admin
+/check_codeowners.py                      @actions-internal-test-codeowners/maintainer
+/github_pr_to_internal_pr/                @actions-internal-test-codeowners/developer
