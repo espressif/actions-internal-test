@@ -152,14 +152,14 @@ def notify_maintainers(pr_head_branch, pr_base_branch, project_gl, mr_iid):
 
     codeowners_list = []
     for file in modified_files:
-        cmd = f'python {CODEOWNERS_CHECK_PATH} identify {file}'
+        cmd = f'/usr/bin/python3 {CODEOWNERS_CHECK_PATH} identify {file}'
         output = subprocess.check_output(cmd, shell=True, text=True)
         codeowners_list.extend(output.splitlines())
 
     codeowners_list = list(set(filter(None, codeowners_list)))
     owners_to_be_notified = ' '.join(codeowners_list)
 
-    print('Notifying relevant users...')
+    print(f'Notifying relevant users...{codeowners_list} ... {modified_files} ... {output}')
     resource = project_gl.mergerequests.get(mr_iid)
     resource.discussions.create({'body': f'{owners_to_be_notified}: FYI'})
 
