@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@master
       - name: GitHub PR to Internal Codebase Sync
-        uses: espressif/actions-internal-test/github_pr_to_internal_pr@feature/sync_labeled_pr
+        uses: laukik-hase/sync-pr-to-gitlab@develop
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLAB_URL: ${{ secrets.GITLAB_URL }}
