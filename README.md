@@ -7,3 +7,5 @@ Sandbox repo for testing out [our GitHub Actions](https://github.com/espressif/g
 Note .github/main.workflow can be directed to use a branch in the github-actions repo for testing.
 
 Actions docs: https://developer.github.com/actions/
+
+Test pull rq assignee with Espressif Automator API
